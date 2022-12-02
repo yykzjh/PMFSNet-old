@@ -6,10 +6,14 @@
 @Version  :   1.0
 @License  :   (C)Copyright 2022
 """
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../"))
+
 import torch
 import torch.nn as nn
 
-from modules.UNet3D_buildingblocks import DoubleConv, create_encoders, create_decoders
+from lib.models.modules.UNet3D_buildingblocks import DoubleConv, create_encoders, create_decoders
 
 
 class Abstract3DUNet(nn.Module):
@@ -135,7 +139,7 @@ def number_of_features_per_level(init_channel_number, num_levels):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((4, 1, 224, 224, 128)).to(device)
+    x = torch.randn((1, 1, 160, 160, 96)).to(device)
 
     model = UNet3D(in_channels=1, out_channels=35).to(device)
 
