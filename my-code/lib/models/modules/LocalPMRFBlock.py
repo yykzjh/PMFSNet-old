@@ -262,13 +262,14 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         :param dilation: 空洞率
         """
         super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, self).__init__()
+        self.k = len(kernels)
         # 先定义一个卷积层变换输出通道数
         self.basic_conv = nn.Conv3d(in_channels=in_channel, out_channels=channel, kernel_size=3, padding=1)
         # 定义Wq的不同感受野分支的卷积
         self.ch_Wq_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -285,7 +286,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         # 定义通道注意力的Softmax
         self.ch_softmax = nn.Softmax(1)
         # 定义通道注意力对分数矩阵的卷积Wz
-        self.ch_Wz = nn.Conv3d(channel // 2, channel, kernel_size=1)
+        self.ch_Wz = nn.Conv3d(channel//self.k, channel, kernel_size=1)
         # 定义通道注意力的层归一化
         self.layer_norm = nn.LayerNorm((channel, 1, 1, 1))
         # 定义对注意力分数矩阵的Sigmoid激活函数
@@ -294,8 +295,8 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         # 定义Wq的不同感受野分支的卷积
         self.sp_Wq_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -303,8 +304,8 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         # 定义Wk的不同感受野分支的卷积
         self.sp_Wk_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -335,7 +336,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         # 堆叠通道Wk
         ch_Wk = torch.stack(ch_Wk_outs, dim=-1)  # bs, 1, d, h, w, k
         # 转换维度
-        ch_Wq = ch_Wq.reshape(bs, c//2, -1)  # bs, c//2, d*h*w*k
+        ch_Wq = ch_Wq.reshape(bs, c//self.k, -1)  # bs, c//2, d*h*w*k
         ch_Wk = ch_Wk.reshape(bs, -1, 1)  # bs, d*h*w*k, 1
         # 进行Softmax处理
         ch_Wk = self.ch_softmax(ch_Wk)  # bs, d*h*w*k, 1
@@ -392,13 +393,14 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
         :param dilation: 空洞率
         """
         super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints, self).__init__()
+        self.k = len(kernels)
         # 先定义一个卷积层变换输出通道数
         self.basic_conv = nn.Conv3d(in_channels=in_channel, out_channels=channel, kernel_size=3, padding=1)
         # 定义Wq的不同感受野分支的卷积
         self.ch_Wq_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -423,21 +425,21 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
             for k in kernels
         ])
         # 将Wk的各分支加权为通道数为1
-        self.ch_Wk_Conv = nn.Conv3d(len(kernels), 1, kernel_size=1)
+        self.ch_Wk_Conv = nn.Conv3d(self.k, 1, kernel_size=1)
         # 定义通道注意力的Softmax
         self.ch_softmax = nn.Softmax(1)
         # 定义通道注意力对分数矩阵的卷积Wz
-        self.ch_Wz = nn.Conv3d(len(kernels) * channel // 2, len(kernels) * channel, kernel_size=1)
+        self.ch_Wz = nn.Conv3d(channel, self.k * channel, kernel_size=1)
         # 定义通道注意力的层归一化
-        self.layer_norm = nn.LayerNorm((len(kernels) * channel, 1, 1, 1))
+        self.layer_norm = nn.LayerNorm((self.k * channel, 1, 1, 1))
         # 定义对注意力分数矩阵的Sigmoid激活函数
         self.sigmoid = nn.Sigmoid()
 
         # 定义Wq的不同感受野分支的卷积
         self.sp_Wq_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -445,8 +447,8 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
         # 定义Wk的不同感受野分支的卷积
         self.sp_Wk_convs = nn.ModuleList([
             nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel//2, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel//2)),
+                ("conv", nn.Conv3d(channel, channel//self.k, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel//self.k)),
                 ("relu", nn.ReLU(inplace=True))
             ]))
             for k in kernels
@@ -529,7 +531,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
         # 堆叠通道Wq
         sp_Wv = torch.stack(sp_Wv_outs, dim=-1)  # bs, c, d, h, w, k
         # 转换维度
-        sp_Wq = sp_Wq.reshape(bs, c//2, -1)  # bs, c//2, d*h*w*k
+        sp_Wq = sp_Wq.reshape(bs, c//self.k, -1)  # bs, c//2, d*h*w*k
         sp_Wk = sp_Wk.mean(-1).mean(-1).mean(-1).mean(-1).reshape(bs, 1, -1)  # bs, 1, c//2
         # 进行Softmax处理
         sp_Wk = self.sp_softmax(sp_Wk)  # bs, 1, c//2
@@ -556,8 +558,8 @@ if __name__ == '__main__':
 
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel(channel=32).to(device)
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel(32).to(device)
-    model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector(32, 64).to(device)
-    # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(32, 64).to(device)
+    # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector(32, 64).to(device)
+    model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(32, 64).to(device)
 
     output = model(x)
 

@@ -184,7 +184,7 @@ class PMRF_Net_Half(nn.Module):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((1, 1, 64, 64, 64)).to(device)
+    x = torch.randn((1, 1, 96, 160, 160)).to(device)
 
     model = PMRF_Net_All(in_channels=1, out_channels=35).to(device)
 
