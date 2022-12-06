@@ -19,7 +19,8 @@ from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMRFBlock import (LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector,
                                                LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify,
-                                               LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints)
+                                               LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints,
+                                               LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints_Simplify)
 
 
 
