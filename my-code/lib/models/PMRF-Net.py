@@ -17,16 +17,14 @@ import torch.nn as nn
 from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
-from lib.models.modules.LocalPMRFBlock import (LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel,
-                                               LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel,
-                                               LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector,
+from lib.models.modules.LocalPMRFBlock import (LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector,
                                                LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify,
                                                LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints)
 
 
 
 class PMRF_Net_All(nn.Module):
-    def __init__(self, in_channels=1, out_channels=35, t=2, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify):
+    def __init__(self, in_channels=1, out_channels=35, t=2, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMRF_Net_All, self).__init__()
 
         self.Maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
