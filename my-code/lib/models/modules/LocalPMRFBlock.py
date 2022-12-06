@@ -486,7 +486,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
     """
     使用多尺度感受野信息扩充注意力位置的局部极化多尺度感受野自注意力模块
     """
-    def __init__(self, in_channel, channel, kernels=[1, 3, 5, 7], group=1, dilation=2, r=4):
+    def __init__(self, in_channel, channel, kernels=[1, 3, 5, 7], group=1, dilation=2, r=2):
         """
         定义一个使用多尺度感受野信息扩充注意力位置的局部极化多尺度感受野自注意力模块
 
@@ -611,8 +611,8 @@ if __name__ == '__main__':
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel(channel=32).to(device)
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel(32).to(device)
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector(32, 64).to(device)
-    model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(32, 64).to(device)
     # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify(32, 64).to(device)
+    model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(32, 64).to(device)
 
     output = model(x)
 

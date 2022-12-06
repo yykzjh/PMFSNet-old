@@ -24,7 +24,7 @@ from lib.models.modules.LocalPMRFBlock import (LocalPolarizedMultiScaleReceptive
 
 
 class PMRF_Net_All(nn.Module):
-    def __init__(self, in_channels=1, out_channels=35, t=2, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
+    def __init__(self, in_channels=1, out_channels=35, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMRF_Net_All, self).__init__()
 
         self.Maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
@@ -101,20 +101,20 @@ class PMRF_Net_All(nn.Module):
 
 
 class PMRF_Net_Half(nn.Module):
-    def __init__(self, in_channels=1, out_channels=35, t=2, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector):
+    def __init__(self, in_channels=1, out_channels=35, t=1, basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMRF_Net_Half, self).__init__()
 
         self.Maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
 
-        self.RRCNN1 = RecurrentResidualBlock(ch_in=in_channels, ch_out=64, t=t)
+        self.RRCNN1 = basic_module(in_channels, 64)
 
-        self.RRCNN2 = RecurrentResidualBlock(ch_in=64, ch_out=128, t=t)
+        self.RRCNN2 = basic_module(64, 128)
 
-        self.RRCNN3 = RecurrentResidualBlock(ch_in=128, ch_out=256, t=t)
+        self.RRCNN3 = basic_module(128, 256)
 
-        self.RRCNN4 = RecurrentResidualBlock(ch_in=256, ch_out=512, t=t)
+        self.RRCNN4 = basic_module(256, 512)
 
-        self.RRCNN5 = RecurrentResidualBlock(ch_in=512, ch_out=1024, t=t)
+        self.RRCNN5 = basic_module(512, 1024)
 
         self.Up4 = UpConv(ch_in=1024, ch_out=512)
         self.Att4 = GridAttentionGate3d(F_l=512, F_g=1024, F_int=256)

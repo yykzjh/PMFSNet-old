@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     x = torch.randn((1, 1, 96, 160, 160)).to(device)
 
-    model = R2AttentionU_Net(in_channels=1, out_channels=35, t=2).to(device)
+    model = R2AttentionU_Net(in_channels=1, out_channels=35, t=1).to(device)
 
     output = model(x)
 
