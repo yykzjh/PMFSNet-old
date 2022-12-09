@@ -20,233 +20,6 @@ from lib.models.modules.PolarizedSelfAttention3d import SequentialPolarizedSelfA
 
 
 
-class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel(nn.Module):
-    """
-    简单使用多尺度感受野信息扩充通道维度的局部极化多尺度感受野自注意力模块
-    """
-    def __init__(self, channel=512, kernels=[1, 3, 5, 7], group=1, dilation=2):
-        """
-        定义一个简单使用多尺度感受野信息扩充通道维度的局部极化多尺度感受野自注意力模块
-
-        :param channel: 输入通道数
-        :param kernels: 不同分支的内核大小
-        :param group: 分组卷积的组数
-        :param dilation: 空洞率
-        """
-        super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel, self).__init__()
-        # 定义不同内核大小的分支
-        self.convs = nn.ModuleList([
-            nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel)),
-                ("relu", nn.ReLU(inplace=True))
-            ]))
-            for k in kernels
-        ])
-        # 定义一个串行极化自注意力(PSA)模块
-        self.psa = SequentialPolarizedSelfAttention3d(len(kernels) * channel)
-        # 定义一个卷积层将通道数变为原样
-        self.conv1x1 = nn.Conv3d(len(kernels) * channel, channel, kernel_size=1)
-
-
-    def forward(self, x):
-        # 获得输入特征图维度信息
-        bs, c, d, h, w = x.size()
-
-        # 计算各分支不同内核大小的卷积结果
-        conv_outs = [
-            conv(x)
-            for conv in self.convs
-        ]
-
-        # 将不同分支的结果在通道维度cat
-        cat_out = torch.cat(conv_outs, dim=1)
-        # 经过psa处理
-        psa_out = self.psa(cat_out)
-        # 降通道数
-        out = self.conv1x1(psa_out)
-
-        return out
-
-
-
-class PCSA_Score(nn.Module):
-    """
-    极化通道自注意力主干分数模块
-    """
-    def __init__(self, channel, inner_d):
-        """
-        定义一个极化通道自注意力主干分数模块
-
-        :param channel: 输入通道数
-        :param inner_d: 内部和输出通道数
-        """
-        super(PCSA_Score, self).__init__()
-        # 定义通道自注意的两个1X1卷积Wv、Wq
-        self.ch_Wv = nn.Conv3d(channel, inner_d, kernel_size=1)
-        self.ch_Wq = nn.Conv3d(channel, 1, kernel_size=1)
-        # 定义通道注意力的Softmax
-        self.ch_softmax = nn.Softmax(1)
-        # 定义通道注意力对分数矩阵的卷积Wz
-        self.ch_Wz = nn.Conv3d(inner_d, inner_d, kernel_size=1)
-        # 定义通道注意力的层归一化
-        self.layer_norm = nn.LayerNorm((inner_d, 1, 1, 1))
-        # 定义对注意力分数矩阵的Sigmoid激活函数
-        self.sigmoid = nn.Sigmoid()
-
-
-    def forward(self, x):
-        # 获取输入特征图张量的维度信息
-        bs, c, d, h, w = x.size()
-
-        # Channel-only Self-Attention
-        ch_Wv = self.ch_Wv(x)  # bs,inner_d,d,h,w
-        ch_Wq = self.ch_Wq(x)  # bs,1,d,h,w
-        ch_Wv = ch_Wv.reshape(bs, -1, d*h*w)  # bs,inner_d,d*h*w
-        ch_Wq = ch_Wq.reshape(bs, -1, 1)  # bs,d*h*w,1
-        ch_Wq = self.ch_softmax(ch_Wq)  # bs,d*h*w,1
-        ch_Wz = torch.matmul(ch_Wv, ch_Wq).unsqueeze(-1).unsqueeze(-1)  # bs,inner_d,1,1,1
-        ch_score = self.sigmoid(self.layer_norm(self.ch_Wz(ch_Wz)))  # bs,inner_d,1,1,1
-        ch_score = torch.squeeze(ch_score)
-
-        return ch_score
-
-
-
-class PSSA_Score(nn.Module):
-    """
-    极化空间自注意力主干分数模块
-    """
-    def __init__(self, channel):
-        """
-        定义一个极化空间自注意力主干分数模块
-
-        :param channel: 输入通道数
-        """
-        super(PSSA_Score, self).__init__()
-        # 定义空间自注意的两个1X1卷积Wv、Wq
-        self.sp_Wv = nn.Conv3d(channel, channel // 2, kernel_size=1)
-        self.sp_Wq = nn.Conv3d(channel, channel // 2, kernel_size=1)
-        # 定义空间自注意力的全局自适应平均池化
-        self.avg_pool = nn.AdaptiveAvgPool3d(1)
-        # 定义空间自注意力的Softmax
-        self.sp_softmax = nn.Softmax(-1)
-        # 定义对注意力分数矩阵的Sigmoid激活函数
-        self.sigmoid = nn.Sigmoid()
-
-
-    def forward(self, x):
-        # 获取输入特征图张量的维度信息
-        bs, c, d, h, w = x.size()
-
-        sp_Wv = self.sp_Wv(x)  # bs,c//2,d,h,w
-        sp_Wq = self.sp_Wq(x)  # bs,c//2,d,h,w
-        sp_Wq = self.avg_pool(sp_Wq)  # bs,c//2,1,1,1
-        sp_Wv = sp_Wv.reshape(bs, c // 2, -1)  # bs,c//2,d*h*w
-        sp_Wq = sp_Wq.reshape(bs, 1, c // 2)  # bs,1,c//2
-        sp_Wq = self.sp_softmax(sp_Wq)  # bs,1,c//2
-        sp_Wz = torch.matmul(sp_Wq, sp_Wv)  # bs,1,d*h*w
-        sp_score = self.sigmoid(sp_Wz.reshape(bs, 1, d, h, w))  # bs, 1, d, h, w
-
-        return sp_score
-
-
-
-
-class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel(nn.Module):
-    """
-    通过极化自注意力模块计算选择性核的主干分数的局部极化多尺度感受野自注意力模块
-    """
-    def __init__(self, channel, kernels=[1, 3, 5, 7], r=16, group=1, L=32, dilation=2):
-        """
-        定义一个通过极化自注意力模块计算选择性核的主干分数的局部极化多尺度感受野自注意力模块
-
-        :param channel: 输入通道数
-        :param kernels: 不同分支的内核大小
-        :param r: 通道数衰减系数
-        :param group: 分组卷积的组数
-        :param L: 通道数衰减最小值
-        :param dilation: 空洞率
-        """
-        super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel, self).__init__()
-        # 定义不同内核大小的分支
-        self.convs = nn.ModuleList([
-            nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(channel, channel, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
-                ("bn", nn.BatchNorm3d(channel)),
-                ("relu", nn.ReLU(inplace=True))
-            ]))
-            for k in kernels
-        ])
-
-        self.ch_in = max(channel // r, L)
-        self.ch_PSA_score = PCSA_Score(channel=channel, inner_d=self.ch_in)
-        # 定义各分支的通道注意力描述符
-        self.ch_fcs = nn.ModuleList([
-            nn.Linear(self.ch_in, channel)
-            for i in range(len(kernels))
-        ])
-
-        self.sp_PSA_score = PSSA_Score(channel=channel)
-        # 定义各分支的通道注意力描述符
-        self.sp_convs = nn.ModuleList([
-            nn.Conv3d(in_channels=1, out_channels=1, kernel_size=9, padding=4)
-            for i in range(len(kernels))
-        ])
-
-        # 定义应用于不同分支的Softmax
-        self.softmax = nn.Softmax(dim=0)
-
-
-    def forward(self, x):
-        # 获得输入特征图维度信息
-        bs, c, d, h, w = x.size()
-
-        # 计算各分支不同内核大小的卷积结果
-        conv_outs = [
-            conv(x)
-            for conv in self.convs
-        ]
-        # 将各分支得到的特征图逐元素相加
-        U = sum(conv_outs)  # bs, c, d, h, w
-        # 将之前不同分支卷积得到的结果堆叠起来
-        features_stack = torch.stack(conv_outs, dim=0)  # k, bs, c, d, h, w
-
-        # 计算通道主干分数
-        ch_z = self.ch_PSA_score(U)
-        # 根据通道主干分数计算各分支的通道注意力描述符
-        ch_weights = [
-            fc(ch_z).view(bs, c, 1, 1, 1)
-            for fc in self.ch_fcs
-        ]
-        # 堆叠各分支的通道注意力描述符
-        ch_weights_stack = torch.stack(ch_weights, 0)  # k, bs, c, 1, 1, 1
-        # 对同一个通道不同分支的注意力数值进行Softmax
-        ch_weights_stack = self.softmax(ch_weights_stack)  # k, bs, c, 1, 1, 1
-        # 根据注意力分数融合各分支的特征图
-        ch_out = torch.sum(ch_weights_stack * features_stack, dim=0)  # bs, c, d, h, w
-
-        # 计算空间主干分数
-        sp_z = self.sp_PSA_score(U)
-        # 根据空间主干分数计算各分支的空间注意力描述符
-        sp_weights = [
-            conv(sp_z)
-            for conv in self.sp_convs
-        ]
-        # 堆叠各分支的通道注意力描述符
-        sp_weights_stack = torch.stack(sp_weights, 0)  # k, bs, 1, d, h, w
-        # 对同一个通道不同分支的注意力数值进行Softmax
-        sp_weights_stack = self.softmax(sp_weights_stack)  # k, bs, 1, d, h, w
-        # 根据注意力分数融合各分支的特征图
-        sp_out = torch.sum(sp_weights_stack * features_stack, dim=0)  # bs, c, d, h, w
-
-        out = ch_out + sp_out
-
-        return out
-
-
-
-
 class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector(nn.Module):
     """
     使用多尺度感受野信息扩充内积向量长度的局部极化多尺度感受野自注意力模块
@@ -378,6 +151,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
 
 
 
+
 class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify(nn.Module):
     """
     使用多尺度感受野信息扩充内积向量长度的局部极化多尺度感受野自注意力模块
@@ -478,6 +252,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProduc
         sp_out = sp_score * ch_out
 
         return sp_out
+
 
 
 
@@ -746,6 +521,230 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
 
 
 
+
+class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel(nn.Module):
+    """
+    简单使用多尺度感受野信息扩充通道维度的局部极化多尺度感受野自注意力模块
+    """
+    def __init__(self, channel=512, kernels=[1, 3, 5, 7], group=1, dilation=2):
+        """
+        定义一个简单使用多尺度感受野信息扩充通道维度的局部极化多尺度感受野自注意力模块
+
+        :param channel: 输入通道数
+        :param kernels: 不同分支的内核大小
+        :param group: 分组卷积的组数
+        :param dilation: 空洞率
+        """
+        super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendChannel, self).__init__()
+        # 定义不同内核大小的分支
+        self.convs = nn.ModuleList([
+            nn.Sequential(OrderedDict([
+                ("conv", nn.Conv3d(channel, channel, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel)),
+                ("relu", nn.ReLU(inplace=True))
+            ]))
+            for k in kernels
+        ])
+        # 定义一个串行极化自注意力(PSA)模块
+        self.psa = SequentialPolarizedSelfAttention3d(len(kernels) * channel)
+        # 定义一个卷积层将通道数变为原样
+        self.conv1x1 = nn.Conv3d(len(kernels) * channel, channel, kernel_size=1)
+
+
+    def forward(self, x):
+        # 获得输入特征图维度信息
+        bs, c, d, h, w = x.size()
+
+        # 计算各分支不同内核大小的卷积结果
+        conv_outs = [
+            conv(x)
+            for conv in self.convs
+        ]
+
+        # 将不同分支的结果在通道维度cat
+        cat_out = torch.cat(conv_outs, dim=1)
+        # 经过psa处理
+        psa_out = self.psa(cat_out)
+        # 降通道数
+        out = self.conv1x1(psa_out)
+
+        return out
+
+
+
+class PCSA_Score(nn.Module):
+    """
+    极化通道自注意力主干分数模块
+    """
+    def __init__(self, channel, inner_d):
+        """
+        定义一个极化通道自注意力主干分数模块
+
+        :param channel: 输入通道数
+        :param inner_d: 内部和输出通道数
+        """
+        super(PCSA_Score, self).__init__()
+        # 定义通道自注意的两个1X1卷积Wv、Wq
+        self.ch_Wv = nn.Conv3d(channel, inner_d, kernel_size=1)
+        self.ch_Wq = nn.Conv3d(channel, 1, kernel_size=1)
+        # 定义通道注意力的Softmax
+        self.ch_softmax = nn.Softmax(1)
+        # 定义通道注意力对分数矩阵的卷积Wz
+        self.ch_Wz = nn.Conv3d(inner_d, inner_d, kernel_size=1)
+        # 定义通道注意力的层归一化
+        self.layer_norm = nn.LayerNorm((inner_d, 1, 1, 1))
+        # 定义对注意力分数矩阵的Sigmoid激活函数
+        self.sigmoid = nn.Sigmoid()
+
+
+    def forward(self, x):
+        # 获取输入特征图张量的维度信息
+        bs, c, d, h, w = x.size()
+
+        # Channel-only Self-Attention
+        ch_Wv = self.ch_Wv(x)  # bs,inner_d,d,h,w
+        ch_Wq = self.ch_Wq(x)  # bs,1,d,h,w
+        ch_Wv = ch_Wv.reshape(bs, -1, d*h*w)  # bs,inner_d,d*h*w
+        ch_Wq = ch_Wq.reshape(bs, -1, 1)  # bs,d*h*w,1
+        ch_Wq = self.ch_softmax(ch_Wq)  # bs,d*h*w,1
+        ch_Wz = torch.matmul(ch_Wv, ch_Wq).unsqueeze(-1).unsqueeze(-1)  # bs,inner_d,1,1,1
+        ch_score = self.sigmoid(self.layer_norm(self.ch_Wz(ch_Wz)))  # bs,inner_d,1,1,1
+        ch_score = torch.squeeze(ch_score)
+
+        return ch_score
+
+
+
+class PSSA_Score(nn.Module):
+    """
+    极化空间自注意力主干分数模块
+    """
+    def __init__(self, channel):
+        """
+        定义一个极化空间自注意力主干分数模块
+
+        :param channel: 输入通道数
+        """
+        super(PSSA_Score, self).__init__()
+        # 定义空间自注意的两个1X1卷积Wv、Wq
+        self.sp_Wv = nn.Conv3d(channel, channel // 2, kernel_size=1)
+        self.sp_Wq = nn.Conv3d(channel, channel // 2, kernel_size=1)
+        # 定义空间自注意力的全局自适应平均池化
+        self.avg_pool = nn.AdaptiveAvgPool3d(1)
+        # 定义空间自注意力的Softmax
+        self.sp_softmax = nn.Softmax(-1)
+        # 定义对注意力分数矩阵的Sigmoid激活函数
+        self.sigmoid = nn.Sigmoid()
+
+
+    def forward(self, x):
+        # 获取输入特征图张量的维度信息
+        bs, c, d, h, w = x.size()
+
+        sp_Wv = self.sp_Wv(x)  # bs,c//2,d,h,w
+        sp_Wq = self.sp_Wq(x)  # bs,c//2,d,h,w
+        sp_Wq = self.avg_pool(sp_Wq)  # bs,c//2,1,1,1
+        sp_Wv = sp_Wv.reshape(bs, c // 2, -1)  # bs,c//2,d*h*w
+        sp_Wq = sp_Wq.reshape(bs, 1, c // 2)  # bs,1,c//2
+        sp_Wq = self.sp_softmax(sp_Wq)  # bs,1,c//2
+        sp_Wz = torch.matmul(sp_Wq, sp_Wv)  # bs,1,d*h*w
+        sp_score = self.sigmoid(sp_Wz.reshape(bs, 1, d, h, w))  # bs, 1, d, h, w
+
+        return sp_score
+
+
+
+
+class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel(nn.Module):
+    """
+    通过极化自注意力模块计算选择性核的主干分数的局部极化多尺度感受野自注意力模块
+    """
+    def __init__(self, channel, kernels=[1, 3, 5, 7], r=16, group=1, L=32, dilation=2):
+        """
+        定义一个通过极化自注意力模块计算选择性核的主干分数的局部极化多尺度感受野自注意力模块
+
+        :param channel: 输入通道数
+        :param kernels: 不同分支的内核大小
+        :param r: 通道数衰减系数
+        :param group: 分组卷积的组数
+        :param L: 通道数衰减最小值
+        :param dilation: 空洞率
+        """
+        super(LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_SelectiveKernel_Parallel, self).__init__()
+        # 定义不同内核大小的分支
+        self.convs = nn.ModuleList([
+            nn.Sequential(OrderedDict([
+                ("conv", nn.Conv3d(channel, channel, kernel_size=k, padding=((k - 1) * dilation) // 2, dilation=dilation, groups=group)),
+                ("bn", nn.BatchNorm3d(channel)),
+                ("relu", nn.ReLU(inplace=True))
+            ]))
+            for k in kernels
+        ])
+
+        self.ch_in = max(channel // r, L)
+        self.ch_PSA_score = PCSA_Score(channel=channel, inner_d=self.ch_in)
+        # 定义各分支的通道注意力描述符
+        self.ch_fcs = nn.ModuleList([
+            nn.Linear(self.ch_in, channel)
+            for i in range(len(kernels))
+        ])
+
+        self.sp_PSA_score = PSSA_Score(channel=channel)
+        # 定义各分支的通道注意力描述符
+        self.sp_convs = nn.ModuleList([
+            nn.Conv3d(in_channels=1, out_channels=1, kernel_size=9, padding=4)
+            for i in range(len(kernels))
+        ])
+
+        # 定义应用于不同分支的Softmax
+        self.softmax = nn.Softmax(dim=0)
+
+
+    def forward(self, x):
+        # 获得输入特征图维度信息
+        bs, c, d, h, w = x.size()
+
+        # 计算各分支不同内核大小的卷积结果
+        conv_outs = [
+            conv(x)
+            for conv in self.convs
+        ]
+        # 将各分支得到的特征图逐元素相加
+        U = sum(conv_outs)  # bs, c, d, h, w
+        # 将之前不同分支卷积得到的结果堆叠起来
+        features_stack = torch.stack(conv_outs, dim=0)  # k, bs, c, d, h, w
+
+        # 计算通道主干分数
+        ch_z = self.ch_PSA_score(U)
+        # 根据通道主干分数计算各分支的通道注意力描述符
+        ch_weights = [
+            fc(ch_z).view(bs, c, 1, 1, 1)
+            for fc in self.ch_fcs
+        ]
+        # 堆叠各分支的通道注意力描述符
+        ch_weights_stack = torch.stack(ch_weights, 0)  # k, bs, c, 1, 1, 1
+        # 对同一个通道不同分支的注意力数值进行Softmax
+        ch_weights_stack = self.softmax(ch_weights_stack)  # k, bs, c, 1, 1, 1
+        # 根据注意力分数融合各分支的特征图
+        ch_out = torch.sum(ch_weights_stack * features_stack, dim=0)  # bs, c, d, h, w
+
+        # 计算空间主干分数
+        sp_z = self.sp_PSA_score(U)
+        # 根据空间主干分数计算各分支的空间注意力描述符
+        sp_weights = [
+            conv(sp_z)
+            for conv in self.sp_convs
+        ]
+        # 堆叠各分支的通道注意力描述符
+        sp_weights_stack = torch.stack(sp_weights, 0)  # k, bs, 1, d, h, w
+        # 对同一个通道不同分支的注意力数值进行Softmax
+        sp_weights_stack = self.softmax(sp_weights_stack)  # k, bs, 1, d, h, w
+        # 根据注意力分数融合各分支的特征图
+        sp_out = torch.sum(sp_weights_stack * features_stack, dim=0)  # bs, c, d, h, w
+
+        out = ch_out + sp_out
+
+        return out
 
 
 
