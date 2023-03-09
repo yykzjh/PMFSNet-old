@@ -12,18 +12,23 @@ import nibabel as nib
 
 
 def load_nii_file(file_path):
-    image_obj1 = nib.load(file_path)
-    print(f'Type of the image {type(image_obj1)}')
+    image_obj = nib.load(file_path)
+    print(image_obj)
+    print(f'Type of the image {type(image_obj)}')
 
-    image_data1 = image_obj1.get_fdata()
-    type(image_data1)
+    image_data_func = image_obj.get_fdata()
+    image_data_attr = image_obj.dataobj
+    print(type(image_data_func))
+    print(type(image_data_attr))
+    print(image_data_func)
+    print(image_data_attr)
 
-    height1, width1, depth1 = image_data1.shape
+    height1, width1, depth1 = image_data_func.shape
     print(f"The image object height: {height1}, width:{width1}, depth:{depth1}")
 
-    print(f'image value range: [{image_data1.min()}, {image_data1.max()}]')
+    print(f'image value range: [{image_data_func.min()}, {image_data_func.max()}]')
 
-    print(image_obj1.header)
+    print(image_obj.header)
 
 
 
