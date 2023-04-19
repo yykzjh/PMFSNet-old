@@ -2,8 +2,6 @@ import os
 import torch
 import numpy as np
 
-import configs.config as config
-
 from lib import utils
 from lib.visualizations.TensorboardWriter import TensorboardWriter
 
@@ -13,17 +11,17 @@ class Trainer:
     Trainer class
     """
 
-    def __init__(self, model, criterion, optimizer, train_data_loader,
-                 valid_data_loader=None, lr_scheduler=None, device=None):
+    def __init__(self, opt, model, criterion, optimizer, train_loader,
+                 valid_loader=None, lr_scheduler=None):
 
         # 传入的参数
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
-        self.train_data_loader = train_data_loader
-        self.valid_data_loader = valid_data_loader
+        self.train_data_loader = train_loader
+        self.valid_data_loader = valid_loader
         self.lr_scheduler = lr_scheduler
-        self.device = device
+        self.device = opt["device"]
 
         # 创建训练执行目录和文件
         self.execute_dir = os.path.join(

@@ -22,9 +22,8 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 import nni
-from nni.experiment import Experiment
 
-from lib import utils, transforms, models, losses
+from lib import utils, dataloaders, models, losses, trainers
 
 
 
@@ -95,15 +94,15 @@ params = {
 
     # —————————————————————————————————————————————    数据读取     ——————————————————————————————————————————————————————
 
-    "dataset_name": "3DTooth",  # 数据集名称， 可选["3DTooth", ]
+    "dataset_name": "NCTooth",  # 数据集名称， 可选["NCTooth", ]
 
-    "dataset_path": r"./datasets/src_10",  # 数据集路径
+    "dataset_path": r"./datasets/NC-release-data-modify",  # 数据集路径
 
     "create_data": True,  # 是否重新分割子卷训练集
 
-    "batch_size": 6,  # batch_size大小
+    "batch_size": 1,  # batch_size大小
 
-    "num_workers": 4,  # num_workers大小
+    "num_workers": 1,  # num_workers大小
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
@@ -178,6 +177,46 @@ params = {
 
     "crop_stride": [4, 4, 4]
 }
+
+
+
+if __name__ == '__main__':
+
+    # # 获得下一组搜索空间中的参数
+    # tuner_params = nni.get_next_parameter()
+    # # 更新参数
+    # params.update(tuner_params)
+
+    # 设置可用GPU
+    os.environ["CUDA_VISIBLE_DEVICES"] = params["CUDA_VISIBLE_DEVICES"]
+    # 随机种子、卷积算法优化
+    utils.reproducibility(params["seed"], params["cuda"], params["deterministic"], params["benchmark"])
+
+    # 获取GPU设备
+    if params["cuda"]:
+        params["device"] = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    else:
+        params["device"] = torch.device("cpu")
+
+    # 初始化数据加载器
+    train_loader, valid_loader = dataloaders.get_dataloader(params)
+
+    # 初始化模型、优化器和学习率调整器
+    model, optimizer, lr_scheduler = models.get_model_optimizer_lr_scheduler(params)
+
+    # 初始化损失函数
+    loss_function = losses.get_loss_function(params)
+
+    # 初始化训练器
+    # trainer = trainers.Trainer(model, loss_function, optimizer, train_loader, valid_loader, lr_scheduler)
+
+
+
+
+
+
+
+
 
 
 

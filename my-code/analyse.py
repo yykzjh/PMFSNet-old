@@ -85,7 +85,7 @@ def split_dataset(dataset_dir, train_ratio=0.8, seed=123):
     np.random.seed(seed)
     # 创建训练集和验证集文件夹
     train_dir = os.path.join(dataset_dir, "train")
-    val_dir = os.path.join(dataset_dir, "val")
+    val_dir = os.path.join(dataset_dir, "valid")
     if os.path.exists(train_dir):
         shutil.rmtree(train_dir)
     if os.path.exists(val_dir):
