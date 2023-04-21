@@ -1,13 +1,11 @@
 """Module with DenseVNet"""
 import torch
+import torch.nn as nn
 import numpy as np
 
-from torchsummary import summary
-from lib.models.BaseModelClass import BaseModel
 
 
-
-class DenseVNet(BaseModel):
+class DenseVNet(nn.Module):
     def __init__(self, in_channels: int = 1, classes: int = 1):
         super().__init__()
 
@@ -59,17 +57,6 @@ class DenseVNet(BaseModel):
         out = self.upsample_out(out)
 
         return out
-
-
-    def test(self, device=torch.device('cpu')):
-        input_tensor = torch.rand(1, 1, 160, 160, 96)
-        ideal_out = torch.rand(1, self.classes, 160, 160, 96)
-        out = self.forward(input_tensor)
-        assert ideal_out.shape == out.shape
-        summary(self.to(device), (1, 160, 160, 96), device='cpu')
-        print("DenseVNet test is complete")
-
-
 
 
 class ConvBlock(torch.nn.Module):
