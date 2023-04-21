@@ -21,7 +21,7 @@ def get_dataloader(opt):
     if opt["dataset_name"] == "NCTooth":
         # 初始化数据集
         train_set = NCToothDataset(opt, mode="train")
-        valid_set = NCToothDataset(opt, mode="val")
+        valid_set = NCToothDataset(opt, mode="valid")
 
         # 初始化数据加载器
         train_loader = DataLoader(train_set, batch_size=opt["batch_size"], shuffle=True, num_workers=opt["num_workers"], pin_memory=True)

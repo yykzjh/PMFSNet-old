@@ -18,25 +18,30 @@ import lib.utils as utils
 
 class NCToothDataset(Dataset):
     """
-    读取nrrd牙齿数据集
+    读取NC release牙齿数据集
     """
 
     def __init__(self, opt, mode):
         """
         Args:
             opt: 参数字典
-            mode: train/val
+            mode: train/valid
         """
+        self.opt = opt
         self.mode = mode
-        self.run_dir = opt["run_dir"]
         self.root = opt["dataset_path"]
         self.train_path = os.path.join(self.root, "train")
-        self.val_path = os.path.join(self.root, "val")
+        self.val_path = os.path.join(self.root, "valid")
         self.augmentations = [
             opt["open_elastic_transform"], opt["open_gaussian_noise"], opt["open_random_flip"],
             opt["open_random_rescale"], opt["open_random_rotate"], opt["open_random_shift"]]
         self.sub_volume_root_dir = os.path.join(self.root, "sub_volumes")
-        self.data = []
+        if not os.path.exists(self.sub_volume_root_dir):
+            os.makedirs(self.sub_volume_root_dir)
+        self.sub_volume_path = os.path.join(self.sub_volume_root_dir, "-".join([str(item) for item in opt["crop_size"]])
+                                            + "_" + str(opt["samples_train"]) + ".npz")
+        self.selected_images = []
+        self.selected_position = []
         self.transform = None
 
         # 分类创建子卷数据集
@@ -59,87 +64,75 @@ class NCToothDataset(Dataset):
             # 定义数据增强方式
             if opt["augmentation_method"] == "Choice":
                 self.train_transforms = transforms.ComposeTransforms([
+                    transforms.ClipAndShift(opt["clip_lower_bound"], opt["clip_upper_bound"]),
                     transforms.RandomAugmentChoice(practice_augments, p=opt["augmentation_probability"]),
                     transforms.ToTensor(opt["clip_lower_bound"], opt["clip_upper_bound"]),
-                    # transforms.ToTensor(),
                     transforms.Normalize(opt["normalize_mean"], opt["normalize_std"])
                 ])
             elif opt["augmentation_method"] == "Compose":
                 self.train_transforms = transforms.ComposeTransforms([
+                    transforms.ClipAndShift(opt["clip_lower_bound"], opt["clip_upper_bound"]),
                     transforms.ComposeAugments(practice_augments, p=opt["augmentation_probability"]),
                     transforms.ToTensor(opt["clip_lower_bound"], opt["clip_upper_bound"]),
-                    # transforms.ToTensor(),
                     transforms.Normalize(opt["normalize_mean"], opt["normalize_std"])
                 ])
 
-            # 定义子卷训练集目录
-            self.sub_volume_train_dir = os.path.join(self.sub_volume_root_dir, "train")
-            # 定义子卷原图像存储目录
-            self.sub_volume_images_dir = os.path.join(self.sub_volume_train_dir, "images")
-            # 定义子卷标注图像存储目录
-            self.sub_volume_labels_dir = os.path.join(self.sub_volume_train_dir, "labels")
+            # 判断需不需要重新分割子数据集用于训练
+            if (not opt["create_data"]) and os.path.isfile(self.sub_volume_path):
+                # 读取子卷数据集的信息
+                sub_volume_dict = np.load(self.sub_volume_path)
+                self.selected_images = sub_volume_dict["selected_images"]
+                self.selected_position = sub_volume_dict["selected_position"]
+            else:  # 如果需要创建子数据集，或者没有存储子数据集信息的文件
+                # 获取数据集中所有原图图像和标注图像的路径
+                images_path_list = sorted(glob.glob(os.path.join(self.train_path, "images", "*.nii.gz")))
+                labels_path_list = sorted(glob.glob(os.path.join(self.train_path, "labels", "*.nii.gz")))
 
-            # 创建子卷训练集目录
-            utils.make_dirs(self.sub_volume_train_dir)
-            # 创建子卷原图像存储目录
-            utils.make_dirs(self.sub_volume_images_dir)
-            # 创建子卷标注图像存储目录
-            utils.make_dirs(self.sub_volume_labels_dir)
+                # 生成子卷数据集
+                self.selected_images, self.selected_position = utils.create_sub_volumes(images_path_list, labels_path_list, opt)
+                print(self.selected_images, self.selected_position)
 
-            # 获取数据集中所有原图图像和标注图像的路径
-            images_path_list = sorted(glob.glob(os.path.join(self.train_path, "images", "*.nrrd")))
-            labels_path_list = sorted(glob.glob(os.path.join(self.train_path, "labels", "*.nrrd")))
-
-            # 生成子卷数据集
-            self.data = utils.create_sub_volumes(images_path_list, labels_path_list, opt["samples_train"],
-                                                 opt["resample_spacing"], opt["clip_lower_bound"],
-                                                 opt["clip_upper_bound"], opt["crop_size"],
-                                                 opt["crop_threshold"], self.sub_volume_train_dir)
+                # 保存子卷数据集信息
+                np.savez(self.sub_volume_path, selected_images=self.selected_images, selected_position=self.selected_position)
 
         elif self.mode == 'val':
             # 定义验证集数据增强
             self.val_transforms = transforms.ComposeTransforms([
+                transforms.ClipAndShift(opt["clip_lower_bound"], opt["clip_upper_bound"]),
                 transforms.ToTensor(opt["clip_lower_bound"], opt["clip_upper_bound"]),
-                # transforms.ToTensor(),
                 transforms.Normalize(opt["normalize_mean"], opt["normalize_std"])
             ])
 
-            # 定义子卷验证集目录
-            self.sub_volume_val_dir = os.path.join(self.sub_volume_root_dir, "val")
-            # 定义子卷原图像存储目录
-            self.sub_volume_images_dir = os.path.join(self.sub_volume_val_dir, "images")
-            # 定义子卷标注图像存储目录
-            self.sub_volume_labels_dir = os.path.join(self.sub_volume_val_dir, "labels")
-
-            # 创建子卷训练集目录
-            utils.make_dirs(self.sub_volume_val_dir)
-            # 创建子卷原图像存储目录
-            utils.make_dirs(self.sub_volume_images_dir)
-            # 创建子卷标注图像存储目录
-            utils.make_dirs(self.sub_volume_labels_dir)
-
             # 获取数据集中所有原图图像和标注图像的路径
-            images_path_list = sorted(glob.glob(os.path.join(self.val_path, "images", "*.nrrd")))
-            labels_path_list = sorted(glob.glob(os.path.join(self.val_path, "labels", "*.nrrd")))
+            images_path_list = sorted(glob.glob(os.path.join(self.val_path, "images", "*.nii.gz")))
+            labels_path_list = sorted(glob.glob(os.path.join(self.val_path, "labels", "*.nii.gz")))
 
-            # 对验证集进行预处理
-            self.data = utils.preprocess_val_dataset(images_path_list, labels_path_list, opt["resample_spacing"],
-                                                     opt["clip_lower_bound"], opt["clip_upper_bound"],
-                                                     self.sub_volume_val_dir)
+            # 得到验证集数据
+            self.selected_images = zip(images_path_list, labels_path_list)
 
 
     def __len__(self):
-        return len(self.data)
+        return len(self.selected_images)
 
 
     def __getitem__(self, index):
-        image_path, label_path = self.data[index]
-        image, label = np.load(image_path), np.load(label_path)
+        # 先获取原图图像和标注图像的路径
+        image_path, label_path = self.selected_images[index]
+        # 读取原始图像和标注图像
+        image_tensor = utils.load_image_or_label(image_path, self.opt["resample_spacing"], type="image")
+        label_tensor = utils.load_image_or_label(label_path, self.opt["resample_spacing"], type="label")
 
-        if self.mode == 'train':
-            transform_image, transform_label = self.train_transforms(image, label)
+        if self.mode == 'train':  # 训练集
+            # 获取随机裁剪的位置
+            crop_point = self.selected_position[index]
+            # 随机裁剪
+            crop_image_tensor = utils.crop_img(image_tensor, self["crop_size"], crop_point)
+            crop_label_tensor = utils.crop_img(label_tensor, self["crop_size"], crop_point)
+            # 数据变换和数据增强
+            transform_image, transform_label = self.train_transforms(crop_image_tensor, crop_label_tensor)
             return transform_image.unsqueeze(0), transform_label
 
-        else:
-            transform_image, transform_label = self.val_transforms(image, label)
+        else:  # 验证集
+            # 数据变换和数据增强
+            transform_image, transform_label = self.val_transforms(image_tensor, label_tensor)
             return transform_image.unsqueeze(0), transform_label

@@ -19,6 +19,7 @@ from .random_shift import RandomShift
 from .gaussian_noise import GaussianNoise
 from .to_tensor import ToTensor
 from .normalize import Normalize
+from .clip_and_shift import ClipAndShift
 
 
 

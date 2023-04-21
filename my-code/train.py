@@ -23,7 +23,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import nni
 
-from lib import utils, dataloaders, models, losses, trainers
+from lib import utils, dataloaders, models, losses#, trainers
 
 
 
@@ -49,12 +49,12 @@ params = {
     "clip_lower_bound": -3566,  # clip的下边界数值
     "clip_upper_bound": 14913,  # clip的上边界数值
 
-    "samples_train": 2046,  # 作为实际的训练集采样的子卷数量，也就是在原训练集上随机裁剪的子图像数量
+    "samples_train": 4,  # 作为实际的训练集采样的子卷数量，也就是在原训练集上随机裁剪的子图像数量
 
-    "crop_size": (160, 160, 96),  # 随机裁剪的尺寸。1、每个维度都是32的倍数这样在下采样时不会报错;2、11G的显存最大尺寸不能超过(192,192,160);
+    "crop_size": (144, 144, 96),  # 随机裁剪的尺寸。1、每个维度都是32的倍数这样在下采样时不会报错;2、11G的显存最大尺寸不能超过(192,192,160);
     # 3、要依据上面设置的"resample_spacing",在每个维度随机裁剪的尺寸不能超过图像重采样后的尺寸;
 
-    "crop_threshold": 0.1,  # 随机裁剪时需要满足的条件，不满足则重新随机裁剪的位置。条件表示的是裁剪区域中的前景占原图总前景的最小比例
+    "crop_threshold": 0.001,  # 随机裁剪时需要满足的条件，不满足则重新随机裁剪的位置。条件表示的是裁剪区域中的前景占原图总前景的最小比例
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
@@ -106,11 +106,11 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "DENSEVNET",  # 模型名称，可选["DENSEVNET","VNET"]
+    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet", # "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
-    "classes": 35,  # 模型最后输出的通道数,即类别总数
+    "classes": 2,  # 模型最后输出的通道数,即类别总数
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定checkpoint文件路径
 
@@ -198,14 +198,19 @@ if __name__ == '__main__':
     else:
         params["device"] = torch.device("cpu")
 
+    print("完成初始化配置")
+
     # 初始化数据加载器
     train_loader, valid_loader = dataloaders.get_dataloader(params)
+    print("完成初始化数据加载器")
 
     # 初始化模型、优化器和学习率调整器
     model, optimizer, lr_scheduler = models.get_model_optimizer_lr_scheduler(params)
+    print("完成初始化模型、优化器和学习率调整器")
 
     # 初始化损失函数
     loss_function = losses.get_loss_function(params)
+    print("完成初始化损失函数")
 
     # 初始化训练器
     # trainer = trainers.Trainer(model, loss_function, optimizer, train_loader, valid_loader, lr_scheduler)

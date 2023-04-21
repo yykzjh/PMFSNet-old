@@ -9,15 +9,41 @@
 import torch
 import torch.optim as optim
 
-import lib.models as models
 import lib.utils as utils
+
+from .DenseVNet import DenseVNet
+from .UNet3D import UNet3D
+from .VNet import VNet
+from .AttentionUNet import AttentionU_Net
+from .R2UNet import R2U_Net
+from .R2AttentionUNet import R2AttentionU_Net
+
+from .PMRFNet import PMRF_Net_All
 
 
 
 def get_model_optimizer_lr_scheduler(opt):
     # 初始化网络模型
-    if opt["model_name"] == 'DENSEVNET':
-        model = models.DenseVNet(in_channels=opt["in_channels"], classes=opt["classes"])
+    if opt["model_name"] == "DenseVNet":
+        model = DenseVNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "UNet3D":
+        model = UNet3D(opt["in_channels"], opt["classes"], final_sigmoid=False)
+
+    elif opt["model_name"] == "VNet":
+        model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "AttentionUNet":
+        model = AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "R2UNet":
+        model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "R2AttentionUNet":
+        model = R2AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "PMRFNet":
+        model = PMRF_Net_All(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")

@@ -26,10 +26,10 @@ def weight_init(m):
 def weights_init_normal(m):
     if isinstance(m, nn.Linear):
         nn.init.normal_(m.weight.data, 0.0, 0.02)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.Conv3d):
         nn.init.normal_(m.weight.data, 0.0, 0.02)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, (nn.BatchNorm3d, nn.GroupNorm, nn.InstanceNorm3d)):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
@@ -38,10 +38,10 @@ def weights_init_normal(m):
 def weights_init_xavier(m):
     if isinstance(m, nn.Linear):
         nn.init.xavier_normal_(m.weight.data, gain=1)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.Conv3d):
         nn.init.xavier_normal_(m.weight.data, gain=1)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, (nn.BatchNorm3d, nn.GroupNorm, nn.InstanceNorm3d)):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
@@ -50,10 +50,10 @@ def weights_init_xavier(m):
 def weights_init_kaiming(m):
     if isinstance(m, nn.Linear):
         nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.Conv3d):
         nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, (nn.BatchNorm3d, nn.GroupNorm, nn.InstanceNorm3d)):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
@@ -62,10 +62,10 @@ def weights_init_kaiming(m):
 def weights_init_orthogonal(m):
     if isinstance(m, nn.Linear):
         nn.init.orthogonal_(m.weight.data, gain=1)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.Conv3d):
         nn.init.orthogonal_(m.weight.data, gain=1)
-        nn.init.constant_(m.bias.data, 0)
+        if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, (nn.BatchNorm3d, nn.GroupNorm, nn.InstanceNorm3d)):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
