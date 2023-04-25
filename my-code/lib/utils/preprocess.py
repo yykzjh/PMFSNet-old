@@ -177,7 +177,7 @@ def load_label(path):
 
     print(np.sum(data > 0) / data.size)
 
-    # OrthoSlicer3D(data).show()
+    OrthoSlicer3D(data).show()
 
     return data, spacing
 

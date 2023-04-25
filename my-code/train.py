@@ -23,7 +23,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import nni
 
-from lib import utils, dataloaders, models, losses#, trainers
+from lib import utils, dataloaders, models, losses, trainers
 
 
 
