@@ -81,8 +81,8 @@ class NCToothDataset(Dataset):
             if (not opt["create_data"]) and os.path.isfile(self.sub_volume_path):
                 # 读取子卷数据集的信息
                 sub_volume_dict = np.load(self.sub_volume_path)
-                self.selected_images = sub_volume_dict["selected_images"]
-                self.selected_position = sub_volume_dict["selected_position"]
+                self.selected_images = [tuple(image) for image in sub_volume_dict["selected_images"]]
+                self.selected_position = [tuple(crop_point) for crop_point in sub_volume_dict["selected_position"]]
             else:  # 如果需要创建子数据集，或者没有存储子数据集信息的文件
                 # 获取数据集中所有原图图像和标注图像的路径
                 images_path_list = sorted(glob.glob(os.path.join(self.train_path, "images", "*.nii.gz")))
@@ -90,12 +90,11 @@ class NCToothDataset(Dataset):
 
                 # 生成子卷数据集
                 self.selected_images, self.selected_position = utils.create_sub_volumes(images_path_list, labels_path_list, opt)
-                print(self.selected_images, self.selected_position)
 
                 # 保存子卷数据集信息
                 np.savez(self.sub_volume_path, selected_images=self.selected_images, selected_position=self.selected_position)
 
-        elif self.mode == 'val':
+        elif self.mode == 'valid':
             # 定义验证集数据增强
             self.val_transforms = transforms.ComposeTransforms([
                 transforms.ClipAndShift(opt["clip_lower_bound"], opt["clip_upper_bound"]),
@@ -108,7 +107,7 @@ class NCToothDataset(Dataset):
             labels_path_list = sorted(glob.glob(os.path.join(self.val_path, "labels", "*.nii.gz")))
 
             # 得到验证集数据
-            self.selected_images = zip(images_path_list, labels_path_list)
+            self.selected_images = list(zip(images_path_list, labels_path_list))
 
 
     def __len__(self):
@@ -119,20 +118,20 @@ class NCToothDataset(Dataset):
         # 先获取原图图像和标注图像的路径
         image_path, label_path = self.selected_images[index]
         # 读取原始图像和标注图像
-        image_tensor = utils.load_image_or_label(image_path, self.opt["resample_spacing"], type="image")
-        label_tensor = utils.load_image_or_label(label_path, self.opt["resample_spacing"], type="label")
+        image_np = utils.load_image_or_label(image_path, self.opt["resample_spacing"], type="image")
+        label_np = utils.load_image_or_label(label_path, self.opt["resample_spacing"], type="label")
 
         if self.mode == 'train':  # 训练集
             # 获取随机裁剪的位置
             crop_point = self.selected_position[index]
             # 随机裁剪
-            crop_image_tensor = utils.crop_img(image_tensor, self["crop_size"], crop_point)
-            crop_label_tensor = utils.crop_img(label_tensor, self["crop_size"], crop_point)
+            crop_image_np = utils.crop_img(image_np, self.opt["crop_size"], crop_point)
+            crop_label_np = utils.crop_img(label_np, self.opt["crop_size"], crop_point)
             # 数据变换和数据增强
-            transform_image, transform_label = self.train_transforms(crop_image_tensor, crop_label_tensor)
+            transform_image, transform_label = self.train_transforms(crop_image_np, crop_label_np)
             return transform_image.unsqueeze(0), transform_label
 
         else:  # 验证集
             # 数据变换和数据增强
-            transform_image, transform_label = self.val_transforms(image_tensor, label_tensor)
+            transform_image, transform_label = self.val_transforms(image_np, label_np)
             return transform_image.unsqueeze(0), transform_label

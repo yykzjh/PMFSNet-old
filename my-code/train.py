@@ -23,7 +23,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import nni
 
-from lib import utils, dataloaders, models, losses, trainers
+from lib import utils, dataloaders, models, losses, metrics, trainers
 
 
 
@@ -49,7 +49,7 @@ params = {
     "clip_lower_bound": -3566,  # clip的下边界数值
     "clip_upper_bound": 14913,  # clip的上边界数值
 
-    "samples_train": 4,  # 作为实际的训练集采样的子卷数量，也就是在原训练集上随机裁剪的子图像数量
+    "samples_train": 2048,  # 作为实际的训练集采样的子卷数量，也就是在原训练集上随机裁剪的子图像数量
 
     "crop_size": (160, 160, 96),  # 随机裁剪的尺寸。1、每个维度都是32的倍数这样在下采样时不会报错;2、11G的显存最大尺寸不能超过(192,192,160);
     # 3、要依据上面设置的"resample_spacing",在每个维度随机裁剪的尺寸不能超过图像重采样后的尺寸;
@@ -96,9 +96,9 @@ params = {
 
     "dataset_name": "NCTooth",  # 数据集名称， 可选["NCTooth", ]
 
-    "dataset_path": r"./datasets/NC-release-data-modify",  # 数据集路径
+    "dataset_path": r"./datasets/NC-release-data-checked",  # 数据集路径
 
-    "create_data": True,  # 是否重新分割子卷训练集
+    "create_data": False,  # 是否重新分割子卷训练集
 
     "batch_size": 1,  # batch_size大小
 
@@ -106,13 +106,19 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet", # "PMRFNet"]
+    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet", # "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
     "classes": 2,  # 模型最后输出的通道数,即类别总数
 
-    "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定checkpoint文件路径
+    "index_to_class_dict":  # 类别索引映射到类别名称的字典
+    {
+        0: "background",
+        1: "foreground"
+    },
+
+    "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
     "pretrain": None,  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
@@ -151,31 +157,35 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
+    "metric_names": ["DSC"],  # 采用除了dsc之外的评价指标，可选["DSC","ASSD","HD"]
+
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.00002066, 0.00022885, 0.10644896, 0.02451709, 0.03155127, 0.02142642, 0.02350483, 0.02480525,
-                     0.01125384, 0.01206108, 0.07426875, 0.02583742, 0.03059388, 0.02485595, 0.02466779, 0.02529981,
-                     0.01197175, 0.01272877, 0.16020726, 0.05647514, 0.0285633, 0.01808694, 0.02124704, 0.02175892,
-                     0.01802092, 0.01563035, 0., 0.0555509, 0.02747846, 0.01756969, 0.02183707, 0.01934677, 0.01848419,
-                     0.01370064, 0.],  # 各类别计算损失值的加权权重
+    "class_weight": [0.00002066, 1 - 0.00002066],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
+
+    "dice_mode": "extension",  # DSC的计算方式，"standard":标准计算方式；"extension":扩展计算方式
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
-    "start_epoch": 1,  # 训练时的起始epoch
+    "start_epoch": 0,  # 训练时的起始epoch
     "end_epoch": 20,  # 训练时的结束epoch
 
     "best_dice": 0.60,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 50,  # 终端打印统计信息的频率,以step为单位
+    "update_weight_freq": 16,  # 每多少个step更新一次网络权重，用于梯度累加
+
+    "terminal_show_freq": 256,  # 终端打印统计信息的频率,以step为单位
+
+    "save_epoch_freq": 4,  # 每多少个epoch保存一次训练状态和模型参数
 
     # ————————————————————————————————————————————   测试相关参数   ———————————————————————————————————————————————————————
 
-    "crop_stride": [4, 4, 4]
+    "crop_stride": [32, 32, 32]
 }
 
 
@@ -197,8 +207,9 @@ if __name__ == '__main__':
         params["device"] = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     else:
         params["device"] = torch.device("cpu")
-
+    print(params["device"])
     print("完成初始化配置")
+
 
     # 初始化数据加载器
     train_loader, valid_loader = dataloaders.get_dataloader(params)
@@ -212,8 +223,19 @@ if __name__ == '__main__':
     loss_function = losses.get_loss_function(params)
     print("完成初始化损失函数")
 
+    # 初始化各评价指标
+    metric = metrics.get_metric(params)
+    print("完成初始化评价指标")
+
     # 初始化训练器
-    # trainer = trainers.Trainer(model, loss_function, optimizer, train_loader, valid_loader, lr_scheduler)
+    trainer = trainers.Trainer(params, train_loader, valid_loader, model, optimizer, lr_scheduler, loss_function, metric)
+
+    # 如果需要继续训练或者加载预训练权重
+    if (params["resume"] is not None) or (params["pretrain"] is not None):
+        trainer.load()
+
+    # 开始训练
+    trainer.training()
 
 
 

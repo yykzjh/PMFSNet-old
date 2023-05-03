@@ -2,15 +2,18 @@ import math
 import torch
 import numpy as np
 
+from lib.utils import *
+
 
 
 class HausdorffDistance(object):
-    def __init__(self, c=6, num_classes=33):
+    def __init__(self, c=6, num_classes=33, sigmoid_normalization=False):
         """
         定义豪斯多夫距离评价指标计算器
         Args:
             c: 连通度
             num_classes: 类别数
+            sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
         """
         super(HausdorffDistance, self).__init__()
         # 初始化参数
@@ -24,17 +27,40 @@ class HausdorffDistance(object):
                               [1, 0, 0], [1, 0, 1], [1, 1, -1], [1, 1, 0], [1, 1, 1]]
         else:
             raise RuntimeError(f"不支持连通度为{c}")
+        # 初始化sigmoid或者softmax归一化方法
+        if sigmoid_normalization:
+            self.normalization = nn.Sigmoid()
+        else:
+            self.normalization = nn.Softmax(dim=1)
 
 
-    def __call__(self, pred, gt):
+    def __call__(self, input, target):
         """
         计算豪斯多夫距离评价指标
         Args:
-            pred: 经过softmax后的预测图像
-            gt: ground truth 图像
+            input: 网络模型输出的预测图,(B, C, H, W, D)
+            target: 标注图像,(B, H, W, D)
 
-        Returns: 各batch中各类别牙齿的平均豪斯多夫距离
+        Returns: 各batch中各类别牙齿的豪斯多夫距离
         """
+        # ont-hot处理，将标注图在axis=1维度上扩张，该维度大小等于预测图的通道C大小，维度上每一个索引依次对应一个类别,(B, C, H, W, D)
+        target = expand_as_one_hot(target.long(), self.num_classes)
+
+        # 判断one-hot处理后标注图和预测图的维度是否都是5维
+        assert input.dim() == target.dim() == 5, "one-hot处理后标注图和预测图的维度不是都为5维！"
+        # 判断one-hot处理后标注图和预测图的尺寸是否一致
+        assert input.size() == target.size(), "one-hot处理后预测图和标注图的尺寸不一致！"
+
+        # 对预测图进行Sigmiod或者Sofmax归一化操作
+        input = self.normalization(input)
+
+        return compute_per_channel_hd(input, target)
+
+
+
+
+
+
         # 先将预测图像进行分割
         seg = torch.argmax(pred, dim=1)
         # 判断预测图和真是标签图的维度大小是否一致

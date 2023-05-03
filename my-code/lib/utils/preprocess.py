@@ -43,16 +43,16 @@ def create_sub_volumes(images_path_list, labels_path_list, opt):
         random_index = np.random.randint(image_num)
         # 获取当前标签图像
         print(labels_path_list[random_index])
-        label_tensor = load_image_or_label(labels_path_list[random_index], opt["resample_spacing"], type="label")
+        label_np = load_image_or_label(labels_path_list[random_index], opt["resample_spacing"], type="label")
 
         # 反复随机生成裁剪区域，直到满足裁剪指标为止
         cnt_loop = 0
         while True:
             cnt_loop += 1
             # 计算裁剪的位置
-            crop_point = find_random_crop_dim(label_tensor.shape, opt["crop_size"])
+            crop_point = find_random_crop_dim(label_np.shape, opt["crop_size"])
             # 判断当前裁剪区域满不满足条件
-            if find_non_zero_labels_mask(label_tensor, opt["crop_threshold"], opt["crop_size"], crop_point):
+            if find_non_zero_labels_mask(label_np, opt["crop_threshold"], opt["crop_size"], crop_point):
                 # 存储当前裁剪的信息
                 selected_images.append((images_path_list[random_index], labels_path_list[random_index]))
                 selected_position.append(crop_point)
@@ -68,17 +68,17 @@ def find_random_crop_dim(full_vol_dim, crop_size):
     assert full_vol_dim[2] >= crop_size[2], "crop size is too big"
 
     if full_vol_dim[0] == crop_size[0]:
-        slices = crop_size[0]
+        slices = 0
     else:
         slices = np.random.randint(full_vol_dim[0] - crop_size[0])
 
     if full_vol_dim[1] == crop_size[1]:
-        w_crop = crop_size[1]
+        w_crop = 0
     else:
         w_crop = np.random.randint(full_vol_dim[1] - crop_size[1])
 
     if full_vol_dim[2] == crop_size[2]:
-        h_crop = crop_size[2]
+        h_crop = 0
     else:
         h_crop = np.random.randint(full_vol_dim[2] - crop_size[2])
 
@@ -86,7 +86,7 @@ def find_random_crop_dim(full_vol_dim, crop_size):
 
 
 def find_non_zero_labels_mask(label_map, th_percent, crop_size, crop_point):
-    segmentation_map = label_map.clone()
+    segmentation_map = label_map.copy()
     d1, d2, d3 = segmentation_map.shape
     segmentation_map[segmentation_map > 0] = 1
     total_voxel_labels = segmentation_map.sum()
@@ -117,7 +117,7 @@ def load_image_or_label(path, resample_spacing, type=None):
     # 判断是读取标注文件还是原图像文件
     if type == "label":
         img_np, spacing = load_label(path)
-        print(img_np.shape, spacing)
+        # print(img_np.shape, spacing)
     else:
         img_np, spacing = load_image(path)
 
@@ -126,13 +126,13 @@ def load_image_or_label(path, resample_spacing, type=None):
     # 重采样
     img_np = resample_image_spacing(img_np, spacing, resample_spacing, order)
 
-    if type == "label":
-        print(img_np.shape)
+    # if type == "label":
+    #     print(img_np.shape)
 
-    # 转换成tensor
-    img_tensor = torch.from_numpy(img_np)
+    # # 转换成tensor
+    # img_tensor = torch.from_numpy(img_np)
 
-    return img_tensor
+    return img_np
 
 
 def load_nii_file(file_path):
@@ -167,7 +167,7 @@ def load_label(path):
     """
     # 读取图像和体素间距
     data, spacing = load_nii_file(path)
-    print(data.min(), data.max())
+    # print(data.min(), data.max())
 
     # 暂时转换为二分类标注图像
     data[data > 0] = 1
@@ -175,9 +175,9 @@ def load_label(path):
     # 确保数据类型
     data = data.astype("uint8")
 
-    print(np.sum(data > 0) / data.size)
+    # print(np.sum(data > 0) / data.size)
 
-    OrthoSlicer3D(data).show()
+    # OrthoSlicer3D(data).show()
 
     return data, spacing
 
@@ -214,35 +214,32 @@ def resample_image_spacing(data, old_spacing, new_spacing, order):
     return scipy.ndimage.interpolation.zoom(data, scale_list, order=order)
 
 
-def crop_img(img_tensor, crop_size, crop_point):
+def crop_img(img_np, crop_size, crop_point):
     if crop_size[0] == 0:
-        return img_tensor
+        return img_np
     slices_crop, w_crop, h_crop = crop_point
     dim1, dim2, dim3 = crop_size
-    inp_img_dim = img_tensor.dim()
+    inp_img_dim = img_np.ndim
     assert inp_img_dim >= 3
-    if img_tensor.dim() == 3:
-        full_dim1, full_dim2, full_dim3 = img_tensor.shape
-    elif img_tensor.dim() == 4:
-        _, full_dim1, full_dim2, full_dim3 = img_tensor.shape
-        img_tensor = img_tensor[0, ...]
+    if img_np.ndim == 3:
+        full_dim1, full_dim2, full_dim3 = img_np.shape
+    elif img_np.ndim == 4:
+        _, full_dim1, full_dim2, full_dim3 = img_np.shape
+        img_np = img_np[0, ...]
 
     if full_dim1 == dim1:
-        img_tensor = img_tensor[:, w_crop:w_crop + dim2,
-                     h_crop:h_crop + dim3]
+        img_np = img_np[:, w_crop:w_crop + dim2, h_crop:h_crop + dim3]
     elif full_dim2 == dim2:
-        img_tensor = img_tensor[slices_crop:slices_crop + dim1, :,
-                     h_crop:h_crop + dim3]
+        img_np = img_np[slices_crop:slices_crop + dim1, :, h_crop:h_crop + dim3]
     elif full_dim3 == dim3:
-        img_tensor = img_tensor[slices_crop:slices_crop + dim1, w_crop:w_crop + dim2, :]
+        img_np = img_np[slices_crop:slices_crop + dim1, w_crop:w_crop + dim2, :]
     else:
-        img_tensor = img_tensor[slices_crop:slices_crop + dim1, w_crop:w_crop + dim2,
-                     h_crop:h_crop + dim3]
+        img_np = img_np[slices_crop:slices_crop + dim1, w_crop:w_crop + dim2, h_crop:h_crop + dim3]
 
     if inp_img_dim == 4:
-        return img_tensor.unsqueeze(0)
+        return img_np.unsqueeze(0)
 
-    return img_tensor
+    return img_np
 
 
 

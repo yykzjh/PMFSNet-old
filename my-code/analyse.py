@@ -18,6 +18,10 @@ import nibabel as nib
 from tqdm import tqdm
 from nibabel.viewers import OrthoSlicer3D
 import SimpleITK as sitk
+import matplotlib.pyplot as plt
+
+import lib.utils as utils
+
 
 
 def load_nii_file(file_path):
@@ -122,6 +126,69 @@ def split_dataset(dataset_dir, train_ratio=0.8, seed=123):
         shutil.copyfile(src_label_path, dest_label_path)
 
 
+def analyse_image_label_consistency(dataset_dir):
+    # 定义合格数据集存储根目录
+    new_dataset_dir = os.path.join(os.path.dirname(dataset_dir), os.path.basename(dataset_dir) + "-checked")
+    new_dataset_image_dir = os.path.join(new_dataset_dir, "image")
+    new_dataset_label_dir = os.path.join(new_dataset_dir, "label")
+    # 创建新数据集目录
+    if os.path.exists(new_dataset_dir):
+        shutil.rmtree(new_dataset_dir)
+    os.makedirs(new_dataset_dir)
+    os.makedirs(new_dataset_image_dir)
+    os.makedirs(new_dataset_label_dir)
+
+    # 读取数据集路径列表
+    images_list = sorted(glob.glob(os.path.join(dataset_dir, "image", "*.nii.gz")))
+    labels_list = sorted(glob.glob(os.path.join(dataset_dir, "label", "*.nii.gz")))
+    # 条件一：首先检测image和label数据集大小是否一致
+    assert len(images_list) == len(labels_list), "image和label数据集大小不一致"
+
+    # 遍历原images
+    for image_path in tqdm(images_list):
+        # 首先当前image要有同名的label文件
+        virtual_label_path = image_path.replace("image", "label")  # 创建虚拟同名label的路径
+        # 条件二：如果没有该label，跳过当前image
+        if virtual_label_path not in labels_list:
+            continue
+
+        # 如果当前image能找到同名的label，则都先读取
+        image_np = utils.load_image_or_label(image_path, [0.5, 0.5, 0.5], type="image")
+        label_np = utils.load_image_or_label(virtual_label_path, [0.5, 0.5, 0.5], type="label")
+        # 条件三：判断重采样后的image和label图像尺寸是否一致，不一致则跳过当前image
+        if image_np.shape != label_np.shape:
+            continue
+
+        # 最后分析label标注的前景是否有较大概率是image中的牙齿来判断标注文件的正确性
+        # 首先获取image中的最小值和最大值
+        min_val = image_np.min()
+        max_val = image_np.max()
+        # 获取原image的拷贝
+        image_copy = image_np.copy()
+        # 将image_copy的值归一化到0~255
+        image_copy = (image_copy - min_val) / (max_val - min_val) * 255
+        # 转换为整型
+        image_copy = image_copy.astype(np.int32)
+        # 获取骨骼和软组织的阈值
+        T0, T1 = utils.get_multi_threshold(image_copy, m=2, max_length=255)
+        # 展示分割点
+        # plt.hist(image_copy.flatten(), bins=256, color="g", histtype="bar", rwidth=1, alpha=0.6)
+        # plt.axvline(T1, color="r")
+        # plt.show()
+        # 获得阈值在原图中的值
+        ori_T = T1 / 255 * (max_val - min_val) + min_val
+        # 通过label可知所有前景元素，计算前景部分的值大于ori_T的比例
+        ratio = np.sum(image_np[label_np > 0] > ori_T) / np.sum(label_np > 0)
+        # 条件四：如果比例小于0.95，则认为当前label图像标注有问题，跳过当前image
+        if ratio < 0.90:
+            continue
+
+        # 如果前面的四个条件都满足，则将当前image和label存储到新数据集位置
+        file_name = os.path.basename(image_path)  # 获取文件名
+        # 转移存储
+        shutil.copyfile(image_path, os.path.join(new_dataset_image_dir, file_name))
+        shutil.copyfile(virtual_label_path, os.path.join(new_dataset_label_dir, file_name))
+
 
 
 if __name__ == '__main__':
@@ -131,6 +198,10 @@ if __name__ == '__main__':
 
     # load_obj_file(r"./datasets/Teeth3DS/training/upper/0EAKT1CU/0EAKT1CU_upper.obj")
 
-    split_dataset(r"./datasets/NC-release-data-modify", train_ratio=0.8, seed=123)
+    split_dataset(r"./datasets/NC-release-data-checked", train_ratio=0.8, seed=123)
+
+    # 分析数据集中image和label的一致性和正确性
+    # analyse_image_label_consistency(r"./datasets/NC-release-data")
+
 
 

@@ -28,6 +28,12 @@ def save_arguments(args, path):
     f.close()
 
 
+def pre_write_txt(pred, file):
+    f = open(file, 'a', encoding='utf-8')
+    f.write(str(pred))
+    f.write('\n')
+    f.close()
+
 
 def make_dirs(path):
     if os.path.exists(path):
