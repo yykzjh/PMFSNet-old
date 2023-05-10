@@ -14,8 +14,10 @@ import random
 import numpy as np
 import trimesh
 import json
+import torch
 import nibabel as nib
 from tqdm import tqdm
+from functools import reduce
 from nibabel.viewers import OrthoSlicer3D
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
@@ -68,22 +70,6 @@ def load_obj_file(file_path):
     print(len(labels))
 
 
-def analyse_dataset(dataset_path):
-    # 首先获取所有原始图像和所有标签图像的路径
-    images_path_list = glob.glob(os.path.join(dataset_path, "image", "*.nii.gz"))
-    labels_path_list = glob.glob(os.path.join(dataset_path, "label", "10*.nii.gz"))
-
-    # 统计数据集一共有多少个类别
-    label_set = set()
-    for label_path in labels_path_list:
-        # 读取标签图像
-        label_numpy, spacing = load_nii_file(label_path)
-        # 标签值添加到集合中
-        label_set = label_set.union(set(np.unique(label_numpy)))
-        print(label_path, label_numpy.min(), label_numpy.max())
-    print(label_set)
-
-
 def split_dataset(dataset_dir, train_ratio=0.8, seed=123):
     # 设置随机种子
     np.random.seed(seed)
@@ -126,7 +112,7 @@ def split_dataset(dataset_dir, train_ratio=0.8, seed=123):
         shutil.copyfile(src_label_path, dest_label_path)
 
 
-def analyse_image_label_consistency(dataset_dir):
+def analyse_image_label_consistency(dataset_dir, resample_spacing=(0.5, 0.5, 0.5)):
     # 定义合格数据集存储根目录
     new_dataset_dir = os.path.join(os.path.dirname(dataset_dir), os.path.basename(dataset_dir) + "-checked")
     new_dataset_image_dir = os.path.join(new_dataset_dir, "image")
@@ -153,8 +139,8 @@ def analyse_image_label_consistency(dataset_dir):
             continue
 
         # 如果当前image能找到同名的label，则都先读取
-        image_np = utils.load_image_or_label(image_path, [0.5, 0.5, 0.5], type="image")
-        label_np = utils.load_image_or_label(virtual_label_path, [0.5, 0.5, 0.5], type="label")
+        image_np = utils.load_image_or_label(image_path, resample_spacing, type="image")
+        label_np = utils.load_image_or_label(virtual_label_path, resample_spacing, type="label")
         # 条件三：判断重采样后的image和label图像尺寸是否一致，不一致则跳过当前image
         if image_np.shape != label_np.shape:
             continue
@@ -190,18 +176,160 @@ def analyse_image_label_consistency(dataset_dir):
         shutil.copyfile(virtual_label_path, os.path.join(new_dataset_label_dir, file_name))
 
 
+def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bound_ratio=0.01, clip_upper_bound_ratio=0.995, classes=2):
+    # 加载数据集中所有原图像
+    images_list = sorted(glob.glob(os.path.join(dataset_dir, "image", "*.nii.gz")))
+    # 加载数据集中所有标注图像
+    labels_list = sorted(glob.glob(os.path.join(dataset_dir, "label", "*.nii.gz")))
+    assert len(images_list) == len(labels_list), "原图像数量和标注图像数量不一致"
+
+    # print("开始统计体素总量、下界百分位到最小值的长度、上界百分位到最大值的长度->")
+    # # 先统计数据集的总体素量
+    # total_voxels = 0
+    # # 遍历所有图像
+    # for i in tqdm(range(len(images_list))):
+    #     # 判断一下原图像文件名和标注图像文件名一致
+    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+    #     # 获取当前图像的原图像和标注图像
+    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+    #     # 累计体素
+    #     total_voxels += reduce(lambda acc, cur: acc * cur, image_np.shape)
+    # # 计算上下界分位点需要存储的数据量
+    # lower_length = int(total_voxels * clip_lower_bound_ratio + 1)
+    # upper_length = int(total_voxels - total_voxels * clip_upper_bound_ratio + 1)
+    # print("体素总量:{}, 下界百分位到最小值的长度:{}, 上界百分位到最大值的长度:{}".format(total_voxels, lower_length, upper_length))
+    #
+    # print("开始计算所有元素和前景元素的最小值和最大值、clip的上下界->")
+    # # 初始化数据结构
+    # lower_all_values = np.array([])
+    # upper_all_values = np.array([])
+    # all_values_min = 1e9
+    # all_values_max = -1e9
+    # foreground_values_min = 1e9
+    # foreground_values_max = -1e9
+    # # 遍历所有图像
+    # for i in tqdm(range(len(images_list))):
+    #     # 判断一下原图像文件名和标注图像文件名一致
+    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+    #     # 获取当前图像的原图像和标注图像
+    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+    #     label_np = utils.load_image_or_label(labels_list[i], resample_spacing, type="label")
+    #     # 将当前图像的体素添加到上下界的存储数组中并排序
+    #     lower_all_values = np.sort(np.concatenate([lower_all_values, image_np.flatten()], axis=0))
+    #     upper_all_values = np.concatenate([upper_all_values, image_np.flatten()], axis=0)
+    #     upper_all_values = upper_all_values[np.argsort(-upper_all_values)]
+    #     # 判断需不需要裁剪所需的部分
+    #     if len(lower_all_values) > lower_length:
+    #         lower_all_values = lower_all_values[:lower_length]
+    #     if len(upper_all_values) > upper_length:
+    #         upper_all_values = upper_all_values[:upper_length]
+    #     # 维护全部体素和前景体素的最小值和最大值
+    #     all_values_min = min(all_values_min, image_np.min())
+    #     all_values_max = max(all_values_max, image_np.max())
+    #     foreground_values_min = min(foreground_values_min, image_np[label_np != 0].min())
+    #     foreground_values_max = max(foreground_values_max, image_np[label_np != 0].max())
+    #
+    # # 计算指定的上下界分位点的灰度值
+    # clip_lower_bound = lower_all_values[lower_length - 1]
+    # clip_upper_bound = upper_all_values[upper_length - 1]
+    #
+    # # 输出所有元素和前景元素的最小值和最大值
+    # print("all_values_min:{}, fore_values_min:{}, fore_values_max:{}, all_values_max:{}"
+    #       .format(all_values_min, foreground_values_min, foreground_values_max, all_values_max))
+    # # 输出clip的上下界
+    # print("clip_lower_bound:{}, clip_upper_bound:{}".format(clip_lower_bound, clip_upper_bound))
+    #
+    #
+    # print("开始计算均值和方差->")
+    # # 初始化均值的加和
+    # mean_sum = 0
+    # # 遍历所有图像
+    # for i in tqdm(range(len(images_list))):
+    #     # 判断一下原图像文件名和标注图像文件名一致
+    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+    #     # 获取当前图像的原图像
+    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+    #     # 对所有灰度值进行clip
+    #     image_np[image_np < clip_lower_bound] = clip_lower_bound
+    #     image_np[image_np > clip_upper_bound] = clip_upper_bound
+    #     # 先将当前图像进行归一化
+    #     image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
+    #     # 累加
+    #     mean_sum += np.sum(image_np)
+    # # 计算均值
+    # mean = mean_sum / total_voxels
+    #
+    # # 初始化标准差的加和
+    # std_sum = 0
+    # # 遍历所有图像
+    # for i in tqdm(range(len(images_list))):
+    #     # 判断一下原图像文件名和标注图像文件名一致
+    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+    #     # 获取当前图像的原图像
+    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+    #     # 对所有灰度值进行clip
+    #     image_np[image_np < clip_lower_bound] = clip_lower_bound
+    #     image_np[image_np > clip_upper_bound] = clip_upper_bound
+    #     # 先将当前图像进行归一化
+    #     image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
+    #     # 计算当前图像每个灰度值减去均值的平方
+    #     image_np = (image_np - mean) ** 2
+    #     # 累加
+    #     std_sum += np.sum(image_np)
+    # # 计算标准差
+    # std = np.sqrt(std_sum / total_voxels)
+    #
+    # print("均值为:{}, 标准差为:{}".format(mean, std))
+
+
+    print("开始计算每个类别的权重数组->")
+    # 初始化统计数组
+    statistics_np = np.zeros((classes, ))
+    # 遍历所有图像
+    for i in tqdm(range(len(images_list))):
+        # 判断一下原图像文件名和标注图像文件名一致
+        assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+        # 获取当前图像的标注图像
+        label_np = utils.load_image_or_label(labels_list[i], resample_spacing, type="label")
+        # 统计在当前标注图像中出现的类别索引以及各类别索引出现的次数
+        class_indexes, indexes_cnt = np.unique(label_np, return_counts=True)
+        # 遍历更新到统计数组中
+        for j, class_index in enumerate(class_indexes):
+            # 获取当前类别索引的次数
+            index_cnt = indexes_cnt[j]
+            # 累加当前类别索引的次数
+            statistics_np[class_index] += index_cnt
+
+    # 初始化权重向量
+    weights = np.zeros((classes, ))
+    # 依次计算每个类别的权重
+    for i, cnt in enumerate(statistics_np):
+        if cnt != 0:
+            weights[i] = 1 / cnt
+    # 归一化权重数组
+    weights = weights / weights.sum()
+    print("各类别的权重数组为：", end='[')
+    weights_str = ", ".join([str(weight) for weight in weights])
+    print(weights_str + "]")
+
+
+
+
+
 
 if __name__ == '__main__':
-    # analyse_dataset(dataset_path=r"./datasets/NC-release-data")
 
     # load_nii_file(r"./datasets/NC-release-data/label/X2313838.nii.gz")
 
     # load_obj_file(r"./datasets/Teeth3DS/training/upper/0EAKT1CU/0EAKT1CU_upper.obj")
 
-    split_dataset(r"./datasets/NC-release-data-checked", train_ratio=0.8, seed=123)
+    # split_dataset(r"./datasets/NC-release-data-checked", train_ratio=0.8, seed=123)
 
     # 分析数据集中image和label的一致性和正确性
     # analyse_image_label_consistency(r"./datasets/NC-release-data")
+
+    # 分析数据集的Clip上下界、均值和方差
+    analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
 
 
 
