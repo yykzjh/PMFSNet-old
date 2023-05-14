@@ -183,103 +183,103 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
     labels_list = sorted(glob.glob(os.path.join(dataset_dir, "label", "*.nii.gz")))
     assert len(images_list) == len(labels_list), "原图像数量和标注图像数量不一致"
 
-    # print("开始统计体素总量、下界百分位到最小值的长度、上界百分位到最大值的长度->")
-    # # 先统计数据集的总体素量
-    # total_voxels = 0
-    # # 遍历所有图像
-    # for i in tqdm(range(len(images_list))):
-    #     # 判断一下原图像文件名和标注图像文件名一致
-    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
-    #     # 获取当前图像的原图像和标注图像
-    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
-    #     # 累计体素
-    #     total_voxels += reduce(lambda acc, cur: acc * cur, image_np.shape)
-    # # 计算上下界分位点需要存储的数据量
-    # lower_length = int(total_voxels * clip_lower_bound_ratio + 1)
-    # upper_length = int(total_voxels - total_voxels * clip_upper_bound_ratio + 1)
-    # print("体素总量:{}, 下界百分位到最小值的长度:{}, 上界百分位到最大值的长度:{}".format(total_voxels, lower_length, upper_length))
-    #
-    # print("开始计算所有元素和前景元素的最小值和最大值、clip的上下界->")
-    # # 初始化数据结构
-    # lower_all_values = np.array([])
-    # upper_all_values = np.array([])
-    # all_values_min = 1e9
-    # all_values_max = -1e9
-    # foreground_values_min = 1e9
-    # foreground_values_max = -1e9
-    # # 遍历所有图像
-    # for i in tqdm(range(len(images_list))):
-    #     # 判断一下原图像文件名和标注图像文件名一致
-    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
-    #     # 获取当前图像的原图像和标注图像
-    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
-    #     label_np = utils.load_image_or_label(labels_list[i], resample_spacing, type="label")
-    #     # 将当前图像的体素添加到上下界的存储数组中并排序
-    #     lower_all_values = np.sort(np.concatenate([lower_all_values, image_np.flatten()], axis=0))
-    #     upper_all_values = np.concatenate([upper_all_values, image_np.flatten()], axis=0)
-    #     upper_all_values = upper_all_values[np.argsort(-upper_all_values)]
-    #     # 判断需不需要裁剪所需的部分
-    #     if len(lower_all_values) > lower_length:
-    #         lower_all_values = lower_all_values[:lower_length]
-    #     if len(upper_all_values) > upper_length:
-    #         upper_all_values = upper_all_values[:upper_length]
-    #     # 维护全部体素和前景体素的最小值和最大值
-    #     all_values_min = min(all_values_min, image_np.min())
-    #     all_values_max = max(all_values_max, image_np.max())
-    #     foreground_values_min = min(foreground_values_min, image_np[label_np != 0].min())
-    #     foreground_values_max = max(foreground_values_max, image_np[label_np != 0].max())
-    #
-    # # 计算指定的上下界分位点的灰度值
-    # clip_lower_bound = lower_all_values[lower_length - 1]
-    # clip_upper_bound = upper_all_values[upper_length - 1]
-    #
-    # # 输出所有元素和前景元素的最小值和最大值
-    # print("all_values_min:{}, fore_values_min:{}, fore_values_max:{}, all_values_max:{}"
-    #       .format(all_values_min, foreground_values_min, foreground_values_max, all_values_max))
-    # # 输出clip的上下界
-    # print("clip_lower_bound:{}, clip_upper_bound:{}".format(clip_lower_bound, clip_upper_bound))
-    #
-    #
-    # print("开始计算均值和方差->")
-    # # 初始化均值的加和
-    # mean_sum = 0
-    # # 遍历所有图像
-    # for i in tqdm(range(len(images_list))):
-    #     # 判断一下原图像文件名和标注图像文件名一致
-    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
-    #     # 获取当前图像的原图像
-    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
-    #     # 对所有灰度值进行clip
-    #     image_np[image_np < clip_lower_bound] = clip_lower_bound
-    #     image_np[image_np > clip_upper_bound] = clip_upper_bound
-    #     # 先将当前图像进行归一化
-    #     image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
-    #     # 累加
-    #     mean_sum += np.sum(image_np)
-    # # 计算均值
-    # mean = mean_sum / total_voxels
-    #
-    # # 初始化标准差的加和
-    # std_sum = 0
-    # # 遍历所有图像
-    # for i in tqdm(range(len(images_list))):
-    #     # 判断一下原图像文件名和标注图像文件名一致
-    #     assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
-    #     # 获取当前图像的原图像
-    #     image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
-    #     # 对所有灰度值进行clip
-    #     image_np[image_np < clip_lower_bound] = clip_lower_bound
-    #     image_np[image_np > clip_upper_bound] = clip_upper_bound
-    #     # 先将当前图像进行归一化
-    #     image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
-    #     # 计算当前图像每个灰度值减去均值的平方
-    #     image_np = (image_np - mean) ** 2
-    #     # 累加
-    #     std_sum += np.sum(image_np)
-    # # 计算标准差
-    # std = np.sqrt(std_sum / total_voxels)
-    #
-    # print("均值为:{}, 标准差为:{}".format(mean, std))
+    print("开始统计体素总量、下界百分位到最小值的长度、上界百分位到最大值的长度->")
+    # 先统计数据集的总体素量
+    total_voxels = 0
+    # 遍历所有图像
+    for i in tqdm(range(len(images_list))):
+        # 判断一下原图像文件名和标注图像文件名一致
+        assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+        # 获取当前图像的原图像和标注图像
+        image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+        # 累计体素
+        total_voxels += reduce(lambda acc, cur: acc * cur, image_np.shape)
+    # 计算上下界分位点需要存储的数据量
+    lower_length = int(total_voxels * clip_lower_bound_ratio + 1)
+    upper_length = int(total_voxels - total_voxels * clip_upper_bound_ratio + 1)
+    print("体素总量:{}, 下界百分位到最小值的长度:{}, 上界百分位到最大值的长度:{}".format(total_voxels, lower_length, upper_length))
+
+    print("开始计算所有元素和前景元素的最小值和最大值、clip的上下界->")
+    # 初始化数据结构
+    lower_all_values = np.array([])
+    upper_all_values = np.array([])
+    all_values_min = 1e9
+    all_values_max = -1e9
+    foreground_values_min = 1e9
+    foreground_values_max = -1e9
+    # 遍历所有图像
+    for i in tqdm(range(len(images_list))):
+        # 判断一下原图像文件名和标注图像文件名一致
+        assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+        # 获取当前图像的原图像和标注图像
+        image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+        label_np = utils.load_image_or_label(labels_list[i], resample_spacing, type="label")
+        # 将当前图像的体素添加到上下界的存储数组中并排序
+        lower_all_values = np.sort(np.concatenate([lower_all_values, image_np.flatten()], axis=0))
+        upper_all_values = np.concatenate([upper_all_values, image_np.flatten()], axis=0)
+        upper_all_values = upper_all_values[np.argsort(-upper_all_values)]
+        # 判断需不需要裁剪所需的部分
+        if len(lower_all_values) > lower_length:
+            lower_all_values = lower_all_values[:lower_length]
+        if len(upper_all_values) > upper_length:
+            upper_all_values = upper_all_values[:upper_length]
+        # 维护全部体素和前景体素的最小值和最大值
+        all_values_min = min(all_values_min, image_np.min())
+        all_values_max = max(all_values_max, image_np.max())
+        foreground_values_min = min(foreground_values_min, image_np[label_np != 0].min())
+        foreground_values_max = max(foreground_values_max, image_np[label_np != 0].max())
+
+    # 计算指定的上下界分位点的灰度值
+    clip_lower_bound = lower_all_values[lower_length - 1]
+    clip_upper_bound = upper_all_values[upper_length - 1]
+
+    # 输出所有元素和前景元素的最小值和最大值
+    print("all_values_min:{}, fore_values_min:{}, fore_values_max:{}, all_values_max:{}"
+          .format(all_values_min, foreground_values_min, foreground_values_max, all_values_max))
+    # 输出clip的上下界
+    print("clip_lower_bound:{}, clip_upper_bound:{}".format(clip_lower_bound, clip_upper_bound))
+
+
+    print("开始计算均值和方差->")
+    # 初始化均值的加和
+    mean_sum = 0
+    # 遍历所有图像
+    for i in tqdm(range(len(images_list))):
+        # 判断一下原图像文件名和标注图像文件名一致
+        assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+        # 获取当前图像的原图像
+        image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+        # 对所有灰度值进行clip
+        image_np[image_np < clip_lower_bound] = clip_lower_bound
+        image_np[image_np > clip_upper_bound] = clip_upper_bound
+        # 先将当前图像进行归一化
+        image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
+        # 累加
+        mean_sum += np.sum(image_np)
+    # 计算均值
+    mean = mean_sum / total_voxels
+
+    # 初始化标准差的加和
+    std_sum = 0
+    # 遍历所有图像
+    for i in tqdm(range(len(images_list))):
+        # 判断一下原图像文件名和标注图像文件名一致
+        assert os.path.basename(images_list[i]) == os.path.basename(labels_list[i]), "原图像文件名和标注图像文件名不一致"
+        # 获取当前图像的原图像
+        image_np = utils.load_image_or_label(images_list[i], resample_spacing, type="image")
+        # 对所有灰度值进行clip
+        image_np[image_np < clip_lower_bound] = clip_lower_bound
+        image_np[image_np > clip_upper_bound] = clip_upper_bound
+        # 先将当前图像进行归一化
+        image_np = (image_np - clip_lower_bound) / (clip_upper_bound - clip_lower_bound)
+        # 计算当前图像每个灰度值减去均值的平方
+        image_np = (image_np - mean) ** 2
+        # 累加
+        std_sum += np.sum(image_np)
+    # 计算标准差
+    std = np.sqrt(std_sum / total_voxels)
+
+    print("均值为:{}, 标准差为:{}".format(mean, std))
 
 
     print("开始计算每个类别的权重数组->")

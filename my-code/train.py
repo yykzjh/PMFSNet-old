@@ -166,7 +166,9 @@ params = {
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
-    "dice_mode": "extension",  # DSC的计算方式，"standard":标准计算方式；"extension":扩展计算方式
+    "dice_loss_mode": "extension",  # Dice Loss的计算方式，"standard":标准计算方式；"extension":扩展计算方式
+
+    "dice_mode": "standard",  # DSC的计算方式，"standard":标准计算方式；"extension":扩展计算方式
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
