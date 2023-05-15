@@ -106,7 +106,8 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet", # "PMRFNet"]
+    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
