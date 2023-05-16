@@ -142,7 +142,7 @@ params = {
 
     "step_size": 5,  # StepLR的学习率衰减步长
 
-    "milestones": [3, 5, 9, 13, 15, 17, 18, 19],  # MultiStepLR的学习率衰减节点列表
+    "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 
     "T_max": 5,  # CosineAnnealingLR的半周期
 
@@ -173,10 +173,12 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
+    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 20,  # 训练时的结束epoch
+    "end_epoch": 10,  # 训练时的结束epoch
 
     "best_dice": 0.60,  # 保存检查点的初始条件
 
@@ -195,10 +197,11 @@ params = {
 
 if __name__ == '__main__':
 
-    # # 获得下一组搜索空间中的参数
-    # tuner_params = nni.get_next_parameter()
-    # # 更新参数
-    # params.update(tuner_params)
+    if params["optimize_params"]:
+        # 获得下一组搜索空间中的参数
+        tuner_params = nni.get_next_parameter()
+        # 更新参数
+        params.update(tuner_params)
 
     # 设置可用GPU
     os.environ["CUDA_VISIBLE_DEVICES"] = params["CUDA_VISIBLE_DEVICES"]

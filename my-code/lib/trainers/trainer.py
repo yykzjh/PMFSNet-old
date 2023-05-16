@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+import nni
 import torch
 import torch.optim as optim
 from torch.cuda.amp import autocast, GradScaler
@@ -28,13 +29,14 @@ class Trainer:
         # 初始化自动混合精度缩放器
         self.scaler = GradScaler()
 
-        # 创建训练执行目录和文件
-        self.execute_dir = os.path.join(opt["run_dir"], utils.datestr() + "_" + opt["model_name"] + "_" + opt["dataset_name"])
-        self.checkpoint_dir = os.path.join(self.execute_dir, "checkpoints")
-        self.tensorboard_dir = os.path.join(self.execute_dir, "board")
-        self.log_txt_path = os.path.join(self.execute_dir, "log.txt")
-        utils.make_dirs(self.checkpoint_dir)
-        utils.make_dirs(self.tensorboard_dir)
+        if not self.opt["optimize_params"]:
+            # 创建训练执行目录和文件
+            self.execute_dir = os.path.join(opt["run_dir"], utils.datestr() + "_" + opt["model_name"] + "_" + opt["dataset_name"])
+            self.checkpoint_dir = os.path.join(self.execute_dir, "checkpoints")
+            self.tensorboard_dir = os.path.join(self.execute_dir, "board")
+            self.log_txt_path = os.path.join(self.execute_dir, "log.txt")
+            utils.make_dirs(self.checkpoint_dir)
+            utils.make_dirs(self.tensorboard_dir)
 
         # 训练时需要用到的参数
         self.start_epoch = self.opt["start_epoch"]
@@ -62,17 +64,28 @@ class Trainer:
             # 当前epoch的验证阶段
             self.valid_epoch(epoch)
 
-            # epoch结束总的输出一下结果
-            print("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
-                  .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
-                          self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
-                          self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
-                          self.best_dice))
-            utils.pre_write_txt("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
-                                .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
-                                        self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
-                                        self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
-                                        self.best_dice), self.log_txt_path)
+            if not self.opt["optimize_params"]:
+                # epoch结束总的输出一下结果
+                print("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
+                      .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
+                              self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
+                              self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
+                              self.best_dice))
+                utils.pre_write_txt("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
+                                    .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
+                                            self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
+                                            self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
+                                            self.best_dice), self.log_txt_path)
+
+            if self.opt["optimize_params"]:
+                # 向nni上报每个epoch验证集的平均dsc作为中间指标
+                nni.report_intermediate_result(
+                    self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"])
+
+        if self.opt["optimize_params"]:
+            # 将在验证集上最优的dsc作为最终上报指标
+            nni.report_final_result(self.best_dice)
+
 
 
     def train_epoch(self, epoch):
@@ -112,7 +125,7 @@ class Trainer:
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
 
             # 判断满不满足打印信息或者画图表的周期
-            if (batch_idx + 1) % self.terminal_show_freq == 0:
+            if (not self.opt["optimize_params"]) and (batch_idx + 1) % self.terminal_show_freq == 0:
                 print("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
                       .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
@@ -154,14 +167,16 @@ class Trainer:
             cur_dsc = self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"]
 
             # 按照一定周期固定保存模型和训练状态部分
-            if (epoch + 1) % self.save_epoch_freq == 0:
+            if (not self.opt["optimize_params"]) and (epoch + 1) % self.save_epoch_freq == 0:
                 self.save(epoch, cur_dsc, self.best_dice, type="normal")
-            # 每次都保存最新的latest
-            self.save(epoch, cur_dsc, self.best_dice, type="latest")
+            if not self.opt["optimize_params"]:
+                # 每次都保存最新的latest
+                self.save(epoch, cur_dsc, self.best_dice, type="latest")
             # 与最优结果进行比较，保存最优的模型
             if cur_dsc > self.best_dice:
                 self.best_dice = cur_dsc
-                self.save(epoch, cur_dsc, self.best_dice, type="best")
+                if not self.opt["optimize_params"]:
+                    self.save(epoch, cur_dsc, self.best_dice, type="best")
 
 
     def split_forward(self, image, model):
