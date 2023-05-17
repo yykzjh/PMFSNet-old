@@ -340,11 +340,13 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
         # 获得输入特征图维度信息
         bs, c, d, h, w = x.size()
 
+
         # 计算通道各分支
-        ch_outs = [
-            conv(x)
-            for conv in self.ch_convs
-        ]
+        ch_outs = []
+        print(x.size())
+        for i, conv in enumerate(self.ch_convs):
+            print(conv.conv.kernel_size)
+            ch_outs.append(conv(x))
         # 堆叠通道Wq
         ch_Wq = torch.stack(ch_outs, dim=1)  # bs, k, self.inner_c, d, h, w
         # 堆叠通道Wk

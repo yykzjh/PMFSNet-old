@@ -60,6 +60,9 @@ def get_model_optimizer_lr_scheduler(opt):
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
 
+    # 随机初始化模型参数
+    utils.init_weights(model, init_type="kaiming")
+
     # 获取GPU设备
     if opt["cuda"]:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -68,9 +71,6 @@ def get_model_optimizer_lr_scheduler(opt):
 
     # 把模型放到GPU上
     model = model.to(device)
-
-    # 随机初始化模型参数
-    utils.init_weights(model, init_type="kaiming")
 
     # 初始化优化器
     if opt["optimizer_name"] == "SGD":

@@ -106,7 +106,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
     # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
@@ -173,7 +173,7 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
