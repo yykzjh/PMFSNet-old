@@ -30,6 +30,9 @@ def get_dataloader(opt):
     else:
         raise RuntimeError(f"{opt['dataset_name']}是不支持的数据集！")
 
+    # 存储steps_per_epoch
+    opt["steps_per_epoch"] = len(train_set) // opt["batch_size"]
+
     return train_loader, valid_loader
 
 

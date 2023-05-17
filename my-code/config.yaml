@@ -1,12 +1,12 @@
 experimentName: PMFSNet
 searchSpaceFile: search_space.json
-trialCommand: CUDA_VISIBLE_DEVICES=0 python train.py
+trialCommand: python train.py
 trialCodeDirectory: ./
 experimentWorkingDirectory: ./log
 logLevel: info
 trialGpuNumber: 1
 trialConcurrency: 1
-tunerGpuIndices: "0"
+tunerGpuIndices: "1"
 maxExperimentDuration: 5d
 maxTrialNumber: 50
 tuner:

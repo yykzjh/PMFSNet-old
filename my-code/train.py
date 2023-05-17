@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -102,7 +102,7 @@ params = {
 
     "batch_size": 1,  # batch_size大小
 
-    "num_workers": 1,  # num_workers大小
+    "num_workers": 0,  # num_workers大小
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 

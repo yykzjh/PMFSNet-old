@@ -260,7 +260,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
     """
     使用多尺度感受野信息扩充注意力位置的局部极化多尺度感受野自注意力模块
     """
-    def __init__(self, in_channel, channel, kernels=[1, 3, 5, 7], group=1, dilation=2, r=4):
+    def __init__(self, in_channel, channel, kernels=[1, 3, 5, 7], group=1, dilation=1, r=4):
         """
         定义一个使用多尺度感受野信息扩充注意力位置的局部极化多尺度感受野自注意力模块
 
@@ -342,11 +342,10 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
 
 
         # 计算通道各分支
-        ch_outs = []
-        print(x.size())
-        for i, conv in enumerate(self.ch_convs):
-            print(conv.conv.kernel_size)
-            ch_outs.append(conv(x))
+        ch_outs = [
+            conv(x)
+            for conv in self.ch_convs
+        ]
         # 堆叠通道Wq
         ch_Wq = torch.stack(ch_outs, dim=1)  # bs, k, self.inner_c, d, h, w
         # 堆叠通道Wk
