@@ -3,6 +3,7 @@ datasets/
 checkpoints/
 pretrain/
 runs/
+log/
 
 
 # Byte-compiled / optimized / DLL files
