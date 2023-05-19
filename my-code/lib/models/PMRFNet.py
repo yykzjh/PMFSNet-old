@@ -20,7 +20,7 @@ from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMRFBlock import LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify, \
     LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
+    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints_Simplify
 from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 
@@ -28,7 +28,7 @@ from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiv
 
 class PMRF_Net_All(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
-                 basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints,
+                 basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints_Simplify,
                  global_module=GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMRF_Net_All, self).__init__()
 
@@ -189,13 +189,14 @@ class PMRF_Net_Half(nn.Module):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((1, 1, 96, 160, 160)).to(device)
+    x = torch.randn((1, 1, 160, 160, 96)).to(device)
 
     model = PMRF_Net_All(in_channels=1, out_channels=2).to(device)
 
     output = model(x)
 
     print(x.size())
+    print(x.device)
     print(output.size())
 
 

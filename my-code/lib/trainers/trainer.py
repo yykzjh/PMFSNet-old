@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 
 import nni
@@ -26,8 +27,9 @@ class Trainer:
         self.loss_function = loss_function
         self.metric = metric
         self.device = opt["device"]
-        # 初始化自动混合精度缩放器
-        self.scaler = GradScaler()
+        if self.opt["use_amp"]:
+            # 初始化自动混合精度缩放器
+            self.scaler = GradScaler()
 
         if not self.opt["optimize_params"]:
             # 创建训练执行目录和文件
@@ -64,13 +66,14 @@ class Trainer:
             # 当前epoch的验证阶段
             self.valid_epoch(epoch)
 
+            # epoch结束总的输出一下结果
+            print("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
+                  .format(epoch, self.end_epoch - 1,
+                          self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
+                          self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                          self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
+                          self.best_dice))
             if not self.opt["optimize_params"]:
-                # epoch结束总的输出一下结果
-                print("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
-                      .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
-                              self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
-                              self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
-                              self.best_dice))
                 utils.pre_write_txt("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
                                     .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
                                             self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
@@ -99,42 +102,93 @@ class Trainer:
             # 将输入图像和标注图像都移动到指定设备上
             input_tensor, target = input_tensor.to(self.device), target.to(self.device)
 
-            # 利用with语句，在autocast实例的上下文范围内，进行模型的前向推理和loss计算
-            with autocast():
+            if self.opt["use_amp"]:
+                # 利用with语句，在autocast实例的上下文范围内，进行模型的前向推理和loss计算
+                with autocast():
+
+                    t0 = time.time()
+                    # 前向传播
+                    output = self.model(input_tensor)
+                    t1 = time.time()
+                    # 计算损失值
+                    dice_loss = self.loss_function(output, target)
+                    t2 = time.time()
+
+                t3 = time.time()
+                # 对loss进行缩放，针对缩放后的loss进行反向传播(此部分计算在autocast()作用范围以外)
+                self.scaler.scale(dice_loss / self.update_weight_freq).backward()
+                t4 = time.time()
+
+                # 判断满不满足梯度累加的周期
+                if (batch_idx + 1) % self.update_weight_freq == 0:
+                    t5 = time.time()
+                    # 将梯度值缩放回原尺度后，优化器更新参数
+                    # self.scaler.step(self.optimizer)
+                    self.optimizer.step()
+                    t6 = time.time()
+                    # 更新scalar的缩放信息
+                    # self.scaler.update()
+                    t7 = time.time()
+                    # 梯度清0
+                    self.optimizer.zero_grad()
+            else:
+                t0 = time.time()
                 # 前向传播
                 output = self.model(input_tensor)
+                t1 = time.time()
                 # 计算损失值
                 dice_loss = self.loss_function(output, target)
+                t2 = time.time()
 
-            # 对loss进行缩放，针对缩放后的loss进行反向传播(此部分计算在autocast()作用范围以外)
-            self.scaler.scale(dice_loss / self.update_weight_freq).backward()
+                t3 = time.time()
+                scaled_dice_loss = dice_loss / self.update_weight_freq
+                scaled_dice_loss.backward()
+                t4 = time.time()
 
-            # 判断满不满足梯度累加的周期
-            if (batch_idx + 1) % self.update_weight_freq == 0:
+                # 判断满不满足梯度累加的周期
+                if (batch_idx + 1) % self.update_weight_freq == 0:
+                    t5 = time.time()
+                    # 将梯度值缩放回原尺度后，优化器更新参数
+                    self.optimizer.step()
+                    t6 = time.time()
+                    # 梯度清0
+                    self.optimizer.zero_grad()
 
-                # 将梯度值缩放回原尺度后，优化器更新参数
-                self.scaler.step(self.optimizer)
-
-                # 更新scalar的缩放信息
-                self.scaler.update()
-
-                # 梯度清0
-                self.optimizer.zero_grad()
-
+            t8 = time.time()
             # 计算各评价指标并更新中间统计信息
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
+            t9 = time.time()
+
+            # if (batch_idx + 1) % 2 == 0:
+            #     print("----------------------------------batch 2----------------------------------")
+            #     print("前向传播时间：{:.6f}秒".format(t1 - t0))
+            #     print("计算loss时间：{:.6f}秒".format(t2 - t1))
+            #     print("反向传播时间：{:.6f}秒".format(t4 - t3))
+            #     print("优化器更新参数时间：{:.6f}秒".format(t6 - t5))
+            #     if self.opt["use_amp"]:
+            #         print("更新scaler时间：{:.6f}秒".format(t7 - t6))
+            #     print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
+            # else:
+            #     print("----------------------------------batch 1----------------------------------")
+            #     print("前向传播时间：{:.6f}秒".format(t1 - t0))
+            #     print("计算loss时间：{:.6f}秒".format(t2 - t1))
+            #     print("反向传播时间：{:.6f}秒".format(t4 - t3))
+            #     print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
+            # if batch_idx == 3:
+            #     exit()
 
             # 判断满不满足打印信息或者画图表的周期
-            if (not self.opt["optimize_params"]) and (batch_idx + 1) % self.terminal_show_freq == 0:
+            if (batch_idx + 1) % self.terminal_show_freq == 0:
                 print("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
                       .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                               self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"]))
-                utils.pre_write_txt("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
-                                    .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
-                                            self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                            self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"]),
-                                    self.log_txt_path)
+                if not self.opt["optimize_params"]:
+                    utils.pre_write_txt("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
+                                        .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
+                                                self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
+                                                self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"]),
+                                        self.log_txt_path)
 
         # 更新学习率
         if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):

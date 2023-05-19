@@ -60,17 +60,13 @@ def get_model_optimizer_lr_scheduler(opt):
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
 
+
+    # 把模型放到GPU上
+    model = model.to(opt["device"])
+
     # 随机初始化模型参数
     utils.init_weights(model, init_type="kaiming")
 
-    # 获取GPU设备
-    if opt["cuda"]:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    else:
-        device = torch.device("cpu")
-
-    # 把模型放到GPU上
-    model = model.to(device)
 
     # 初始化优化器
     if opt["optimizer_name"] == "SGD":
@@ -116,7 +112,7 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["lr_scheduler_name"] == "OneCycleLR":
         lr_scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opt["learning_rate"],
-                                                     steps_per_epoch=opt["steps_per_epoch"], epochs=opt["end_epoch"])
+                                                     steps_per_epoch=opt["steps_per_epoch"], epochs=opt["end_epoch"], cycle_momentum=False)
 
     elif opt["lr_scheduler_name"] == "ReduceLROnPlateau":
         lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=opt["mode"], factor=opt["factor"],
