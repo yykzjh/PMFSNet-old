@@ -106,7 +106,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
     # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
@@ -125,36 +125,36 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
+    "optimizer_name": "RMSprop",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.001,  # 学习率
+    "learning_rate": 0.0001,  # 学习率
 
-    "weight_decay": 0.00001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
-    "momentum": 0.9,  # 动量大小
+    "momentum": 0.8064939684280367,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
-    "gamma": 0.9,  # 学习率衰减系数
+    "gamma": 0.9131037079427222,  # 学习率衰减系数
 
     "step_size": 5,  # StepLR的学习率衰减步长
 
     "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 5,  # CosineAnnealingLR的半周期
+    "T_max": 2,  # CosineAnnealingLR的半周期
 
-    "T_0": 4,  # CosineAnnealingWarmRestarts的周期
+    "T_0": 2,  # CosineAnnealingWarmRestarts的周期
 
     "T_mult": 2,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "min",  # ReduceLROnPlateau的衡量指标变化方向
 
-    "patience": 5,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
+    "patience": 2,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
 
-    "factor": 0.1,  # ReduceLROnPlateau的衰减系数
+    "factor": 0.5084722568589964,  # ReduceLROnPlateau的衰减系数
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
@@ -184,7 +184,7 @@ params = {
 
     "best_dice": 0.60,  # 保存检查点的初始条件
 
-    "update_weight_freq": 16,  # 每多少个step更新一次网络权重，用于梯度累加
+    "update_weight_freq": 32,  # 每多少个step更新一次网络权重，用于梯度累加
 
     "terminal_show_freq": 256,  # 终端打印统计信息的频率,以step为单位
 
