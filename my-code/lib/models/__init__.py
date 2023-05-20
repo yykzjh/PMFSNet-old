@@ -21,7 +21,7 @@ from .HighResNet3D import HighResNet3D
 from .DenseVoxelNet import DenseVoxelNet
 from .MultiResUNet3D import MultiResUNet3D
 
-from .PMRFNet import PMRF_Net_All
+from .PMFSNet import PMFSNet
 
 
 
@@ -55,7 +55,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = MultiResUNet3D(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "PMRFNet":
-        model = PMRF_Net_All(in_channels=opt["in_channels"], out_channels=opt["classes"])
+        model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
