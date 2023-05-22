@@ -18,9 +18,7 @@ from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMRFBlock import LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector_Simplify, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints_Simplify
+    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPointsw
 from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 
