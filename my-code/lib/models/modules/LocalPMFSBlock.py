@@ -260,7 +260,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
         ch_Wq = ch_Wq.reshape(bs, -1, d * h * w)  # bs, k * self.inner_c, d*h*w
         ch_Wk = ch_Wk.reshape(bs, -1, 1)  # bs, d*h*w, 1
         # 进行Softmax处理
-        ch_Wk = self.ch_softmax(ch_Wk)  # bs, d*h*w*k, 1
+        ch_Wk = self.ch_softmax(ch_Wk)  # bs, d*h*w, 1
         # 矩阵相乘
         ch_Wz = torch.matmul(ch_Wq, ch_Wk).unsqueeze(-1).unsqueeze(-1)  # bs, k * self.inner_c, 1, 1, 1
         # 计算通道注意力分数矩阵
@@ -304,15 +304,190 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
 
 
 
+class PMFSBlock_AP(nn.Module):
+    """
+    使用多尺度特征扩充注意力关注点数量，从而对各尺度特征进行增强的极化多尺度特征自注意力模块
+    """
+    def __init__(self, ch, ch_k, ch_v, br):
+        """
+        定义一个极化多尺度特征自注意力模块
+
+        Args:
+            ch: 输入通道数，也是输出的通道数
+            ch_k: K的通道数
+            ch_v: V的通道数
+            br: 多尺度特征的数量
+        """
+        super(PMFSBlock_AP, self).__init__()
+        # 初始化参数
+        self.ch = ch
+        self.ch_k = ch_k
+        self.ch_v = ch_v
+        self.br = br
+        self.ch_in = self.ch * self.br
+
+        # 定义通道Wq卷积
+        self.ch_Wq = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        # 定义通道Wk卷积
+        self.ch_Wk = nn.Conv3d(self.ch_in, 1, kernel_size=5, stride=1, padding=2, bias=True)
+        # 定义通道Wv卷积
+        self.ch_Wv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        # 定义通道K的softmax
+        self.ch_softmax = nn.Softmax(dim=1)
+        # 定义对通道分数矩阵的卷积
+        self.ch_score_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1)
+        # 定义对通道分数矩阵的LayerNorm层归一化
+        self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1, 1))
+        # 定义sigmoid
+        self.sigmoid = nn.Sigmoid()
+        # 定义通道输出前的前馈卷积
+        self.ch_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+
+        # 定义空间Wq卷积
+        self.sp_Wq = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间Wk卷积
+        self.sp_Wk = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间Wv卷积
+        self.sp_Wv = nn.Conv3d(self.ch_in, self.br * self.ch_v, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间K的softmax
+        self.sp_softmax = nn.Softmax(dim=-1)
+        # 定义空间输出前的前馈卷积，还原通道数
+        self.sp_forward_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+
+    def forward(self, x):
+        # 获得输入特征图维度信息
+        bs, c, d, h, w = x.size()
+
+        # 先计算通道ch_Q、ch_K、ch_V
+        ch_Q = self.ch_Wq(x)  # bs, self.ch_in, d, h, w
+        ch_K = self.ch_Wk(x)  # bs, 1, d, h, w
+        ch_V = self.ch_Wv(x)  # bs, self.ch_in, d, h, w
+        # 转换通道ch_Q维度
+        ch_Q = ch_Q.reshape(bs, -1, d * h * w)  # bs, self.ch_in, d*h*w
+        # 转换通道ch_K维度
+        ch_K = ch_K.reshape(bs, -1, 1)  # bs, d*h*w, 1
+        # 对通道ch_K采取softmax
+        ch_K = self.ch_softmax(ch_K)  # bs, d*h*w, 1
+        # 将通道ch_Q和通道ch_K相乘
+        Z = torch.matmul(ch_Q, ch_K).unsqueeze(-1).unsqueeze(-1)  # bs, self.ch_in, 1, 1, 1
+        # 计算通道注意力分数矩阵
+        ch_score = self.sigmoid(self.ch_layer_norm(self.ch_score_conv(Z)))  # bs, self.ch_in, 1, 1, 1
+        # 通道增强
+        ch_out = ch_V * ch_score  # bs, self.ch_in, d, h, w
+        # 拷贝一份通道的残差特征
+        ch_residual = ch_out  # bs, self.ch_in, d, h, w
+        # 通道输出前的前馈卷积
+        ch_out = self.ch_forward_conv(ch_out)  # bs, self.ch_in, d, h, w
+        # 通道残差相加
+        ch_out = ch_out + ch_residual  # bs, self.ch_in, d, h, w
+
+        # 先计算空间sp_Q、sp_K、sp_V
+        sp_Q = self.sp_Wq(ch_out)  # bs, self.br*self.ch_k, d, h, w
+        sp_K = self.sp_Wk(ch_out)  # bs, self.br*self.ch_k, d, h, w
+        sp_V = self.sp_Wv(ch_out)  # bs, self.br*self.ch_v, d, h, w
+        # 转换空间sp_Q维度
+        sp_Q = sp_Q.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).reshape(bs, self.ch_k, -1)  # bs, self.ch_k, d*h*w*self.br
+        # 转换空间sp_K维度
+        sp_K = sp_K.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).mean(-1).mean(-1).mean(-1).mean(-1).reshape(bs, 1, self.ch_k)  # bs, 1, self.ch_k
+        # 转换空间sp_V维度
+        sp_V = sp_V.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1)  # bs, self.ch_v, d, h, w, self.br
+        # 对空间sp_K采取softmax
+        sp_K = self.sp_softmax(sp_K)  # bs, 1, self.ch_k
+        # 将空间sp_K和空间sp_Q相乘
+        Z = torch.matmul(sp_K, sp_Q).reshape(bs, 1, d, h, w, self.br)  # bs, 1, d, h, w, self.br
+        # 计算空间注意力分数矩阵
+        sp_score = self.sigmoid(Z)  # bs, 1, d, h, w, self.br
+        # 空间增强
+        sp_out = sp_V * sp_score  # bs, self.ch_v, d, h, w, self.br
+        # 变换空间增强后的维度
+        sp_out = sp_out.permute(0, 5, 1, 2, 3, 4).reshape(bs, self.br * self.ch_v, d, h, w)  # bs, self.br*self.ch_v, d, h, w
+        # 拷贝一份空间的残差特征
+        sp_residual = sp_out  # bs, self.ch_in, d, h, w
+        # 最后输出前的卷积，还原通道数
+        sp_out = self.sp_forward_conv(sp_out)  # bs, self.ch_in, d, h, w
+        # 通道残差相加
+        sp_out = sp_out + sp_residual  # bs, self.ch_in, d, h, w
+
+        return sp_out
+
+
+
+class DenseConvWithPMFSBlock(nn.Module):
+    """
+    带有极化多尺度特征增强自注意力模块的密集卷积块
+    """
+    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=4):
+        """
+        定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
+
+        Args:
+            in_ch: 输入通道数
+            out_ch: 输出通道数
+            dilations: 各卷积层空洞率，长度表明堆叠次数
+            r: 内部通道数相对于输出通道数的衰减率
+        """
+        super(DenseConvWithPMFSBlock, self).__init__()
+        # 初始化参数
+        self.in_ch = in_ch
+        self.out_ch = out_ch
+        self.dilations = dilations
+        self.inner_ch = self.out_ch // r
+        self.layer_num = len(self.dilations)
+        # 将输入特征通道压缩
+        self.input_conv = nn.Conv3d(self.in_ch, self.inner_ch, kernel_size=1, stride=1)
+        # 定义多次的堆叠密集卷积层，每层包括空洞卷积、BN、ReLU、PMFSBlock
+        self.dense_conv_layers = nn.ModuleList([
+            nn.Sequential(OrderedDict([
+                ("conv", nn.Conv3d((i+1)*self.inner_ch, self.inner_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False)),
+                ("bn", nn.BatchNorm3d(self.inner_ch)),
+                ("relu", nn.ReLU(inplace=True)),
+                ("pmfs", PMFSBlock_AP(self.inner_ch, self.inner_ch, self.inner_ch, i+2))
+            ]))
+            for i, dilation in enumerate(self.dilations)
+        ])
+        # 输出前将通道数卷积到输出值
+        self.output_conv = nn.Sequential(
+            nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm3d(self.out_ch),
+            nn.ReLU(inplace=True)
+        )
+
+
+    def forward(self, x):
+        # 获得输入特征图维度信息
+        bs, c, d, h, w = x.size()
+
+        # 将输入特征通道压缩
+        x = self.input_conv(x)
+
+        # 遍历计算堆叠密集卷积层
+        for i, layer in enumerate(self.dense_conv_layers):
+            # 空洞卷积+bn+relu
+            y = layer.conv(x)
+            y = layer.bn(y)
+            y = layer.relu(y)
+            # concat
+            x = torch.cat([x, y], dim=1)
+            # pmfs特征增强
+            x = layer.pmfs(x)
+
+        # 输出前的卷积层
+        out = self.output_conv(x)
+
+        return out
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((1, 1, 160, 160, 96)).to(device)
+    x = torch.randn((1, 128, 160, 160, 96)).to(device)
 
-    # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector(1, 64).to(device)
-    # model = LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(1, 64).to(device)
+    model = PMFSBlock_AP(32, 32, 32, 4).to(device)
 
     output = model(x)
 

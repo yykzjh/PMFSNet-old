@@ -17,34 +17,29 @@ import torch.nn as nn
 from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
-from lib.models.modules.LocalPMRFBlock import LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
-from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
+from lib.models.modules.LocalPMFSBlock import DenseConvWithPMFSBlock
+from lib.models.modules.GlobalPMFSBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 
 
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
-                 basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints,
+                 basic_module=DenseConvWithPMFSBlock,
                  global_module=GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMFSNet, self).__init__()
 
-        self.Maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
-
         self.Local1 = basic_module(in_channels, 32)
 
+        self.down1 = nn.Conv3d(32, 32, kernel_size=3, stride=2, padding=1)
         self.Local2 = basic_module(32, 64)
 
+        self.down2 = nn.Conv3d(64, 64, kernel_size=3, stride=2, padding=1)
         self.Local3 = basic_module(64, 128)
 
-        self.Local4 = basic_module(128, 256)
+        self.down3 = nn.Conv3d(128, 128, kernel_size=3, stride=2, padding=1)
 
-        self.Global = global_module(256, 512)
-
-        self.Up4 = UpConv(ch_in=512, ch_out=256)
-        self.Att4 = GridAttentionGate3d(F_l=256, F_g=512, F_int=128)
-        self.Up_Local4 = basic_module(512, 256)
+        self.Global = global_module(128, 256, feature_num=4)
 
         self.Up3 = UpConv(ch_in=256, ch_out=128)
         self.Att3 = GridAttentionGate3d(F_l=128, F_g=256, F_int=64)
@@ -64,25 +59,17 @@ class PMFSNet(nn.Module):
         # encoding path
         x1 = self.Local1(x)
 
-        x2 = self.Maxpool(x1)
+        x2 = self.down1(x1)
         x2 = self.Local2(x2)
 
-        x3 = self.Maxpool(x2)
+        x3 = self.down2(x2)
         x3 = self.Local3(x3)
 
-        x4 = self.Maxpool(x3)
-        x4 = self.Local4(x4)
+        x4 = self.down3(x3)
 
-        x5 = self.Maxpool(x4)
-
-        x5 = self.Global([x5, x4, x3, x2, x1])
+        d4 = self.Global([x4, x3, x2, x1])
 
         # decoding + concat path
-        d4 = self.Up4(x5)
-        x4 = self.Att4(x=x4, g=x5)[0]
-        d4 = torch.cat((x4, d4), dim=1)
-        d4 = self.Up_Local4(d4)
-
         d3 = self.Up3(d4)
         x3 = self.Att3(x=x3, g=d4)[0]
         d3 = torch.cat((x3, d3), dim=1)
@@ -107,9 +94,9 @@ class PMFSNet(nn.Module):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((1, 1, 64, 64, 48)).to(device)
+    x = torch.randn((1, 1, 160, 160, 96)).to(device)
 
     model = PMFSNet(in_channels=1, out_channels=2).to(device)
 

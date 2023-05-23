@@ -159,23 +159,23 @@ class Trainer:
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
             t9 = time.time()
 
-            # if (batch_idx + 1) % 2 == 0:
-            #     print("----------------------------------batch 2----------------------------------")
-            #     print("前向传播时间：{:.6f}秒".format(t1 - t0))
-            #     print("计算loss时间：{:.6f}秒".format(t2 - t1))
-            #     print("反向传播时间：{:.6f}秒".format(t4 - t3))
-            #     print("优化器更新参数时间：{:.6f}秒".format(t6 - t5))
-            #     if self.opt["use_amp"]:
-            #         print("更新scaler时间：{:.6f}秒".format(t7 - t6))
-            #     print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
-            # else:
-            #     print("----------------------------------batch 1----------------------------------")
-            #     print("前向传播时间：{:.6f}秒".format(t1 - t0))
-            #     print("计算loss时间：{:.6f}秒".format(t2 - t1))
-            #     print("反向传播时间：{:.6f}秒".format(t4 - t3))
-            #     print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
-            # if batch_idx == 3:
-            #     exit()
+            if (batch_idx + 1) % 2 == 0:
+                print("----------------------------------batch 2----------------------------------")
+                print("前向传播时间：{:.6f}秒".format(t1 - t0))
+                print("计算loss时间：{:.6f}秒".format(t2 - t1))
+                print("反向传播时间：{:.6f}秒".format(t4 - t3))
+                print("优化器更新参数时间：{:.6f}秒".format(t6 - t5))
+                if self.opt["use_amp"]:
+                    print("更新scaler时间：{:.6f}秒".format(t7 - t6))
+                print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
+            else:
+                print("----------------------------------batch 1----------------------------------")
+                print("前向传播时间：{:.6f}秒".format(t1 - t0))
+                print("计算loss时间：{:.6f}秒".format(t2 - t1))
+                print("反向传播时间：{:.6f}秒".format(t4 - t3))
+                print("计算评价指标时间：{:.6f}秒".format(t9 - t8))
+            if batch_idx == 3:
+                exit()
 
             # 判断满不满足打印信息或者画图表的周期
             if (batch_idx + 1) % self.terminal_show_freq == 0:
