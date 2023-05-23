@@ -18,7 +18,7 @@ from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMRFBlock import LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
-    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPointsw
+    LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 
@@ -26,9 +26,9 @@ from lib.models.modules.GlobalPMRFBlock import GlobalPolarizedMultiScaleReceptiv
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
-                 basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints_Simplify,
+                 basic_module=LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints,
                  global_module=GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
-        super(PMRF_Net_All, self).__init__()
+        super(PMFSNet, self).__init__()
 
         self.Maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
 
