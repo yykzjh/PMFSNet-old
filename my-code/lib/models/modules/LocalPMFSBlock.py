@@ -340,8 +340,8 @@ class PMFSBlock_AP(nn.Module):
         self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1, 1))
         # 定义sigmoid
         self.sigmoid = nn.Sigmoid()
-        # 定义通道输出前的前馈卷积
-        self.ch_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        # # 定义通道输出前的前馈卷积
+        # self.ch_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
 
         # 定义空间Wq卷积
         self.sp_Wq = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
@@ -351,8 +351,10 @@ class PMFSBlock_AP(nn.Module):
         self.sp_Wv = nn.Conv3d(self.ch_in, self.br * self.ch_v, kernel_size=1, stride=1, groups=self.br)
         # 定义空间K的softmax
         self.sp_softmax = nn.Softmax(dim=-1)
-        # 定义空间输出前的前馈卷积，还原通道数
-        self.sp_forward_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间卷积，还原通道数
+        self.sp_output_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+        # # 定义空间输出前的前馈卷积
+        # self.sp_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1, stride=1, groups=self.br)
 
     def forward(self, x):
         # 获得输入特征图维度信息
@@ -374,12 +376,12 @@ class PMFSBlock_AP(nn.Module):
         ch_score = self.sigmoid(self.ch_layer_norm(self.ch_score_conv(Z)))  # bs, self.ch_in, 1, 1, 1
         # 通道增强
         ch_out = ch_V * ch_score  # bs, self.ch_in, d, h, w
-        # 拷贝一份通道的残差特征
-        ch_residual = ch_out  # bs, self.ch_in, d, h, w
-        # 通道输出前的前馈卷积
-        ch_out = self.ch_forward_conv(ch_out)  # bs, self.ch_in, d, h, w
-        # 通道残差相加
-        ch_out = ch_out + ch_residual  # bs, self.ch_in, d, h, w
+        # # 拷贝一份通道的残差特征
+        # ch_residual = ch_out  # bs, self.ch_in, d, h, w
+        # # 通道输出前的前馈卷积
+        # ch_out = self.ch_forward_conv(ch_out)  # bs, self.ch_in, d, h, w
+        # # 通道残差相加
+        # ch_out = ch_out + ch_residual  # bs, self.ch_in, d, h, w
 
         # 先计算空间sp_Q、sp_K、sp_V
         sp_Q = self.sp_Wq(ch_out)  # bs, self.br*self.ch_k, d, h, w
@@ -401,12 +403,14 @@ class PMFSBlock_AP(nn.Module):
         sp_out = sp_V * sp_score  # bs, self.ch_v, d, h, w, self.br
         # 变换空间增强后的维度
         sp_out = sp_out.permute(0, 5, 1, 2, 3, 4).reshape(bs, self.br * self.ch_v, d, h, w)  # bs, self.br*self.ch_v, d, h, w
-        # 拷贝一份空间的残差特征
-        sp_residual = sp_out  # bs, self.ch_in, d, h, w
-        # 最后输出前的卷积，还原通道数
-        sp_out = self.sp_forward_conv(sp_out)  # bs, self.ch_in, d, h, w
-        # 通道残差相加
-        sp_out = sp_out + sp_residual  # bs, self.ch_in, d, h, w
+        # 还原通道数
+        sp_out = self.sp_output_conv(sp_out)
+        # # 拷贝一份空间的残差特征
+        # sp_residual = sp_out  # bs, self.ch_in, d, h, w
+        # # 最后输出前的卷积，还原通道数
+        # sp_out = self.sp_forward_conv(sp_out)  # bs, self.ch_in, d, h, w
+        # # 通道残差相加
+        # sp_out = sp_out + sp_residual  # bs, self.ch_in, d, h, w
 
         return sp_out
 
@@ -441,7 +445,7 @@ class DenseConvWithPMFSBlock(nn.Module):
                 ("conv", nn.Conv3d((i+1)*self.inner_ch, self.inner_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False)),
                 ("bn", nn.BatchNorm3d(self.inner_ch)),
                 ("relu", nn.ReLU(inplace=True)),
-                ("pmfs", PMFSBlock_AP(self.inner_ch, self.inner_ch, self.inner_ch, i+2))
+                ("pmfs", PMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, i+2))
             ]))
             for i, dilation in enumerate(self.dilations)
         ])
