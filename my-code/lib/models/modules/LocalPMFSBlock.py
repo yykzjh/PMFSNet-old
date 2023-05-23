@@ -540,7 +540,7 @@ class DenseConvWithPMFSBlock(nn.Module):
 
 
         # pmfs特征增强
-        x = layer.pmfs(x)
+        x = self.pmfs(x)
 
         # 输出前的卷积层
         out = self.output_conv(x)
