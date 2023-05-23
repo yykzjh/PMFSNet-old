@@ -106,7 +106,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "DenseVNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
     # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
@@ -125,7 +125,7 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "RMSprop",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
+    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
 
     "learning_rate": 0.0001,  # 学习率
 
