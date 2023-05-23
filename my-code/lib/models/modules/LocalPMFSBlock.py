@@ -416,6 +416,71 @@ class PMFSBlock_AP(nn.Module):
 
 
 
+# class DenseConvWithPMFSBlock(nn.Module):
+#     """
+#     带有极化多尺度特征增强自注意力模块的密集卷积块
+#     """
+#     def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=4):
+#         """
+#         定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
+#
+#         Args:
+#             in_ch: 输入通道数
+#             out_ch: 输出通道数
+#             dilations: 各卷积层空洞率，长度表明堆叠次数
+#             r: 内部通道数相对于输出通道数的衰减率
+#         """
+#         super(DenseConvWithPMFSBlock, self).__init__()
+#         # 初始化参数
+#         self.in_ch = in_ch
+#         self.out_ch = out_ch
+#         self.dilations = dilations
+#         self.inner_ch = self.out_ch // r
+#         self.layer_num = len(self.dilations)
+#         # 将输入特征通道压缩
+#         self.input_conv = nn.Conv3d(self.in_ch, self.inner_ch, kernel_size=1, stride=1)
+#         # 定义多次的堆叠密集卷积层，每层包括空洞卷积、BN、ReLU、PMFSBlock
+#         self.dense_conv_layers = nn.ModuleList([
+#             nn.Sequential(OrderedDict([
+#                 ("conv", nn.Conv3d((i+1)*self.inner_ch, self.inner_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False)),
+#                 ("bn", nn.BatchNorm3d(self.inner_ch)),
+#                 ("relu", nn.ReLU(inplace=True)),
+#                 ("pmfs", PMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, i+2))
+#             ]))
+#             for i, dilation in enumerate(self.dilations)
+#         ])
+#         # 输出前将通道数卷积到输出值
+#         self.output_conv = nn.Sequential(
+#             nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=3, stride=1, padding=1, bias=False),
+#             nn.BatchNorm3d(self.out_ch),
+#             nn.ReLU(inplace=True)
+#         )
+#
+#
+#     def forward(self, x):
+#         # 获得输入特征图维度信息
+#         bs, c, d, h, w = x.size()
+#
+#         # 将输入特征通道压缩
+#         x = self.input_conv(x)
+#
+#         # 遍历计算堆叠密集卷积层
+#         for i, layer in enumerate(self.dense_conv_layers):
+#             # 空洞卷积+bn+relu
+#             y = layer.conv(x)
+#             y = layer.bn(y)
+#             y = layer.relu(y)
+#             # concat
+#             x = torch.cat([x, y], dim=1)
+#             # pmfs特征增强
+#             x = layer.pmfs(x)
+#
+#         # 输出前的卷积层
+#         out = self.output_conv(x)
+#
+#         return out
+
+
 class DenseConvWithPMFSBlock(nn.Module):
     """
     带有极化多尺度特征增强自注意力模块的密集卷积块
@@ -444,11 +509,11 @@ class DenseConvWithPMFSBlock(nn.Module):
             nn.Sequential(OrderedDict([
                 ("conv", nn.Conv3d((i+1)*self.inner_ch, self.inner_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False)),
                 ("bn", nn.BatchNorm3d(self.inner_ch)),
-                ("relu", nn.ReLU(inplace=True)),
-                ("pmfs", PMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, i+2))
+                ("relu", nn.ReLU(inplace=True))
             ]))
             for i, dilation in enumerate(self.dilations)
         ])
+        self.pmfs = PMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, self.layer_num + 1)
         # 输出前将通道数卷积到输出值
         self.output_conv = nn.Sequential(
             nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=3, stride=1, padding=1, bias=False),
@@ -472,8 +537,10 @@ class DenseConvWithPMFSBlock(nn.Module):
             y = layer.relu(y)
             # concat
             x = torch.cat([x, y], dim=1)
-            # pmfs特征增强
-            x = layer.pmfs(x)
+
+
+        # pmfs特征增强
+        x = layer.pmfs(x)
 
         # 输出前的卷积层
         out = self.output_conv(x)
