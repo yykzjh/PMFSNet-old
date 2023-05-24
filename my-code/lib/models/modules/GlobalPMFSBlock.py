@@ -317,7 +317,142 @@ class GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionP
 
 
 class GlobalPMFSBlock_AP(nn.Module):
-    
+    """
+    使用全局的多尺度特征扩充注意力关注点数量，从而对各尺度特征进行增强的全局极化多尺度特征自注意力模块
+    """
+    def __init__(self, ch_bottle, ch, ch_k, ch_v, br):
+        """
+        定义一个全局的极化多尺度特征自注意力模块
+
+        :param ch_bottle: 最底层瓶颈特征的通道数
+        :param ch: 全局特征统一的通道数
+        :param ch_k: K的通道数
+        :param ch_v: V的通道数
+        :param br: 多尺度特征的数量
+        """
+        super(GlobalPMFSBlock_AP, self).__init__()
+        # 初始化参数
+        self.ch_bottle = ch_bottle
+        self.ch = ch
+        self.ch_k = ch_k
+        self.ch_v = ch_v
+        self.br = br
+        self.ch_in = self.ch * self.br
+
+        # 先确定每个特征图对应的最大池化层的核以及步长大小
+        self.max_pool_size = [2 ** i for i in range(self.br)]
+        # 定义将全局特征下采样到相同尺寸的最大池化层
+        self.max_pool_layers = nn.ModuleList([
+            nn.MaxPool3d(kernel_size=k, stride=k)
+            for k in self.max_pool_size
+        ])
+        # 定义通道的不同感受野分支的卷积
+        self.ch_convs = nn.ModuleList([
+            nn.Sequential(OrderedDict([
+                ("conv", nn.Conv3d(self.ch_bottle // k, self.ch, kernel_size=1)),
+                ("bn", nn.BatchNorm3d(self.ch)),
+                ("relu", nn.ReLU(inplace=True))
+            ]))
+            for k in self.max_pool_size
+        ])
+
+        # 定义通道Wq卷积
+        self.ch_Wq = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        # 定义通道Wk卷积
+        self.ch_Wk = nn.Conv3d(self.ch_in, 1, kernel_size=5, stride=1, padding=2, bias=True)
+        # 定义通道Wv卷积
+        self.ch_Wv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        # 定义通道K的softmax
+        self.ch_softmax = nn.Softmax(dim=1)
+        # 定义对通道分数矩阵的卷积
+        self.ch_score_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1)
+        # 定义对通道分数矩阵的LayerNorm层归一化
+        self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1, 1))
+        # 定义sigmoid
+        self.sigmoid = nn.Sigmoid()
+
+        # 定义空间Wq卷积
+        self.sp_Wq = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间Wk卷积
+        self.sp_Wk = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间Wv卷积
+        self.sp_Wv = nn.Conv3d(self.ch_in, self.br * self.ch_v, kernel_size=1, stride=1, groups=self.br)
+        # 定义空间K的softmax
+        self.sp_softmax = nn.Softmax(dim=-1)
+        # 定义空间卷积，还原通道数
+        self.sp_output_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+
+        # 定义输出卷积，将通道数转换为输入的瓶颈层特征图通道数
+        self.output_conv = nn.Sequential(
+            nn.Conv3d(self.ch_in, 2 * self.ch_bottle, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm3d(self.ch_bottle),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, feature_maps):
+        # 用最大池化统一特征图尺寸
+        max_pool_maps = [
+            max_pool_layer(feature_maps[i])
+            for i, max_pool_layer in enumerate(self.max_pool_layers)
+        ]
+        # 计算通道各分支
+        ch_outs = [
+            ch_conv(max_pool_maps[i])
+            for i, ch_conv in enumerate(self.ch_convs)
+        ]
+        # 将不同分支的特征进行拼接
+        x = torch.cat(ch_outs, dim=1)  # bs, self.ch_in, d, h, w
+        # 获得拼接后特征图的维度信息
+        bs, c, d, h, w = x.size()
+
+        # 先计算通道ch_Q、ch_K、ch_V
+        ch_Q = self.ch_Wq(x)  # bs, self.ch_in, d, h, w
+        ch_K = self.ch_Wk(x)  # bs, 1, d, h, w
+        ch_V = self.ch_Wv(x)  # bs, self.ch_in, d, h, w
+        # 转换通道ch_Q维度
+        ch_Q = ch_Q.reshape(bs, -1, d * h * w)  # bs, self.ch_in, d*h*w
+        # 转换通道ch_K维度
+        ch_K = ch_K.reshape(bs, -1, 1)  # bs, d*h*w, 1
+        # 对通道ch_K采取softmax
+        ch_K = self.ch_softmax(ch_K)  # bs, d*h*w, 1
+        # 将通道ch_Q和通道ch_K相乘
+        Z = torch.matmul(ch_Q, ch_K).unsqueeze(-1).unsqueeze(-1)  # bs, self.ch_in, 1, 1, 1
+        # 计算通道注意力分数矩阵
+        ch_score = self.sigmoid(self.ch_layer_norm(self.ch_score_conv(Z)))  # bs, self.ch_in, 1, 1, 1
+        # 通道增强
+        ch_out = ch_V * ch_score  # bs, self.ch_in, d, h, w
+
+        # 先计算空间sp_Q、sp_K、sp_V
+        sp_Q = self.sp_Wq(ch_out)  # bs, self.br*self.ch_k, d, h, w
+        sp_K = self.sp_Wk(ch_out)  # bs, self.br*self.ch_k, d, h, w
+        sp_V = self.sp_Wv(ch_out)  # bs, self.br*self.ch_v, d, h, w
+        # 转换空间sp_Q维度
+        sp_Q = sp_Q.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).reshape(bs, self.ch_k, -1)  # bs, self.ch_k, d*h*w*self.br
+        # 转换空间sp_K维度
+        sp_K = sp_K.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).mean(-1).mean(-1).mean(-1).mean(-1).reshape(bs, 1, self.ch_k)  # bs, 1, self.ch_k
+        # 转换空间sp_V维度
+        sp_V = sp_V.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1)  # bs, self.ch_v, d, h, w, self.br
+        # 对空间sp_K采取softmax
+        sp_K = self.sp_softmax(sp_K)  # bs, 1, self.ch_k
+        # 将空间sp_K和空间sp_Q相乘
+        Z = torch.matmul(sp_K, sp_Q).reshape(bs, 1, d, h, w, self.br)  # bs, 1, d, h, w, self.br
+        # 计算空间注意力分数矩阵
+        sp_score = self.sigmoid(Z)  # bs, 1, d, h, w, self.br
+        # 空间增强
+        sp_out = sp_V * sp_score  # bs, self.ch_v, d, h, w, self.br
+        # 变换空间增强后的维度
+        sp_out = sp_out.permute(0, 5, 1, 2, 3, 4).reshape(bs, self.br * self.ch_v, d, h, w)  # bs, self.br*self.ch_v, d, h, w
+        # 还原通道数
+        sp_out = self.sp_output_conv(sp_out)  # bs, self.ch_in, d, h, w
+
+        # 最终的输出卷积，将通道数转换为输入的瓶颈层特征图通道数
+        out = self.output_conv(sp_out)
+
+        return out
+
+
+
+
 
 
 

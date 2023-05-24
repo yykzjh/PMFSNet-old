@@ -18,15 +18,14 @@ from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMFSBlock import DenseConvWithLocalPMFSBlock
-from lib.models.modules.GlobalPMFSBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
-    GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP
 
 
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
                  basic_module=DenseConvWithLocalPMFSBlock,
-                 global_module=GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
+                 global_module=GlobalPMFSBlock_AP):
         super(PMFSNet, self).__init__()
 
         self.Local1 = basic_module(in_channels, 32)
@@ -39,7 +38,7 @@ class PMFSNet(nn.Module):
 
         self.down3 = nn.Conv3d(128, 128, kernel_size=3, stride=2, padding=1)
 
-        self.Global = global_module(128, 256, feature_num=4)
+        self.Global = global_module(128, 64, 32, 32, 4)
 
         self.Up3 = UpConv(ch_in=256, ch_out=128)
         self.Att3 = GridAttentionGate3d(F_l=128, F_g=256, F_int=64)

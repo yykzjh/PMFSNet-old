@@ -312,11 +312,10 @@ class LocalPMFSBlock_AP(nn.Module):
         """
         定义一个极化多尺度特征自注意力模块
 
-        Args:
-            ch: 输入通道数，也是输出的通道数
-            ch_k: K的通道数
-            ch_v: V的通道数
-            br: 多尺度特征的数量
+        :param ch: 输入通道数，也是输出的通道数
+        :param ch_k: K的通道数
+        :param ch_v: V的通道数
+        :param br: 多尺度特征的数量
         """
         super(LocalPMFSBlock_AP, self).__init__()
         # 初始化参数
@@ -424,11 +423,10 @@ class LocalPMFSBlock_AP(nn.Module):
 #         """
 #         定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
 #
-#         Args:
-#             in_ch: 输入通道数
-#             out_ch: 输出通道数
-#             dilations: 各卷积层空洞率，长度表明堆叠次数
-#             r: 内部通道数相对于输出通道数的衰减率
+#         :param in_ch: 输入通道数
+#         :param out_ch: 输出通道数
+#         :param dilations: 各卷积层空洞率，长度表明堆叠次数
+#         :param r: 内部通道数相对于输出通道数的衰减率
 #         """
 #         super(DenseConvWithPMFSBlock, self).__init__()
 #         # 初始化参数
@@ -489,11 +487,10 @@ class DenseConvWithLocalPMFSBlock(nn.Module):
         """
         定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
 
-        Args:
-            in_ch: 输入通道数
-            out_ch: 输出通道数
-            dilations: 各卷积层空洞率，长度表明堆叠次数
-            r: 内部通道数相对于输出通道数的衰减率
+        :param in_ch: 输入通道数
+        :param out_ch: 输出通道数
+        :param dilations: 各卷积层空洞率，长度表明堆叠次数
+        :param r: 内部通道数相对于输出通道数的衰减率
         """
         super(DenseConvWithPMFSBlock, self).__init__()
         # 初始化参数
@@ -516,6 +513,7 @@ class DenseConvWithLocalPMFSBlock(nn.Module):
         self.pmfs = LocalPMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, self.layer_num + 1)
         # 输出前将通道数卷积到输出值
         self.output_conv = nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=1, stride=1)
+
 
     def forward(self, x):
         # 获得输入特征图维度信息
