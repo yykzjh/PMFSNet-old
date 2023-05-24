@@ -159,7 +159,7 @@ class Trainer:
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
             t9 = time.time()
 
-            if (batch_idx + 1) % 2 == 0:
+            if (batch_idx + 1) % self.update_weight_freq == 0:
                 print("----------------------------------batch 2----------------------------------")
                 print("前向传播时间：{:.6f}秒".format(t1 - t0))
                 print("计算loss时间：{:.6f}秒".format(t2 - t1))

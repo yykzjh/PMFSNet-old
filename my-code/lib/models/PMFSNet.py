@@ -17,7 +17,7 @@ import torch.nn as nn
 from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
-from lib.models.modules.LocalPMFSBlock import DenseConvWithPMFSBlock
+from lib.models.modules.LocalPMFSBlock import DenseConvWithLocalPMFSBlock
 from lib.models.modules.GlobalPMFSBlock import GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProductVector, \
     GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints
 
@@ -25,7 +25,7 @@ from lib.models.modules.GlobalPMFSBlock import GlobalPolarizedMultiScaleReceptiv
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
-                 basic_module=DenseConvWithPMFSBlock,
+                 basic_module=DenseConvWithLocalPMFSBlock,
                  global_module=GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints):
         super(PMFSNet, self).__init__()
 

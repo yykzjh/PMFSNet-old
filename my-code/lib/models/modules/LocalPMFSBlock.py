@@ -304,7 +304,7 @@ class LocalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPo
 
 
 
-class PMFSBlock_AP(nn.Module):
+class LocalPMFSBlock_AP(nn.Module):
     """
     使用多尺度特征扩充注意力关注点数量，从而对各尺度特征进行增强的极化多尺度特征自注意力模块
     """
@@ -318,7 +318,7 @@ class PMFSBlock_AP(nn.Module):
             ch_v: V的通道数
             br: 多尺度特征的数量
         """
-        super(PMFSBlock_AP, self).__init__()
+        super(LocalPMFSBlock_AP, self).__init__()
         # 初始化参数
         self.ch = ch
         self.ch_k = ch_k
@@ -481,11 +481,11 @@ class PMFSBlock_AP(nn.Module):
 #         return out
 
 
-class DenseConvWithPMFSBlock(nn.Module):
+class DenseConvWithLocalPMFSBlock(nn.Module):
     """
     带有极化多尺度特征增强自注意力模块的密集卷积块
     """
-    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=4):
+    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=8):
         """
         定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
 
@@ -513,14 +513,9 @@ class DenseConvWithPMFSBlock(nn.Module):
             ]))
             for i, dilation in enumerate(self.dilations)
         ])
-        self.pmfs = PMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, self.layer_num + 1)
+        self.pmfs = LocalPMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, self.layer_num + 1)
         # 输出前将通道数卷积到输出值
-        self.output_conv = nn.Sequential(
-            nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm3d(self.out_ch),
-            nn.ReLU(inplace=True)
-        )
-
+        self.output_conv = nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=1, stride=1)
 
     def forward(self, x):
         # 获得输入特征图维度信息
@@ -531,10 +526,7 @@ class DenseConvWithPMFSBlock(nn.Module):
 
         # 遍历计算堆叠密集卷积层
         for i, layer in enumerate(self.dense_conv_layers):
-            # 空洞卷积+bn+relu
-            y = layer.conv(x)
-            y = layer.bn(y)
-            y = layer.relu(y)
+            y = layer(x)
             # concat
             x = torch.cat([x, y], dim=1)
 
@@ -555,7 +547,7 @@ if __name__ == '__main__':
 
     x = torch.randn((1, 128, 160, 160, 96)).to(device)
 
-    model = PMFSBlock_AP(32, 32, 32, 4).to(device)
+    model = LocalPMFSBlock_AP(32, 32, 32, 4).to(device)
 
     output = model(x)
 

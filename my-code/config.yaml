@@ -7,7 +7,7 @@ logLevel: info
 trialGpuNumber: 1
 trialConcurrency: 1
 tunerGpuIndices: "1"
-maxExperimentDuration: 5d
+maxExperimentDuration: 20d
 maxTrialNumber: 50
 tuner:
   name: TPE

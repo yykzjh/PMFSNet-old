@@ -138,9 +138,9 @@ params = {
     "lr_scheduler_name": "StepLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
-    "gamma": 0.9131037079427222,  # 学习率衰减系数
+    "gamma": 0.1,  # 学习率衰减系数
 
-    "step_size": 2,  # StepLR的学习率衰减步长
+    "step_size": 4,  # StepLR的学习率衰减步长
 
     "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 

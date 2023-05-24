@@ -161,7 +161,6 @@ class GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendInnerProdu
 
 
 
-
 class GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionPoints(nn.Module):
     """
     使用多尺度感受野信息扩充注意力位置的全局极化多尺度感受野自注意力模块
@@ -317,7 +316,8 @@ class GlobalPolarizedMultiScaleReceptiveFieldSelfAttentionBlock_ExtendAttentionP
 
 
 
-
+class GlobalPMFSBlock_AP(nn.Module):
+    
 
 
 
