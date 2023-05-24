@@ -37,8 +37,9 @@ class PMFSNet(nn.Module):
         self.Local3 = basic_module(64, 128)
 
         self.down3 = nn.Conv3d(128, 128, kernel_size=3, stride=2, padding=1)
+        self.Local4 = basic_module(128, 256)
 
-        self.Global = global_module(128, 64, 32, 32, 4)
+        self.Global = global_module(256, 128, 64, 64, 4)
 
         self.Up3 = UpConv(ch_in=256, ch_out=128)
         self.Att3 = GridAttentionGate3d(F_l=128, F_g=256, F_int=64)
@@ -65,6 +66,7 @@ class PMFSNet(nn.Module):
         x3 = self.Local3(x3)
 
         x4 = self.down3(x3)
+        x4 = self.Local4(x4)
 
         d4 = self.Global([x4, x3, x2, x1])
 

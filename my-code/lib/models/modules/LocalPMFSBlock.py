@@ -492,7 +492,7 @@ class DenseConvWithLocalPMFSBlock(nn.Module):
         :param dilations: 各卷积层空洞率，长度表明堆叠次数
         :param r: 内部通道数相对于输出通道数的衰减率
         """
-        super(DenseConvWithPMFSBlock, self).__init__()
+        super(DenseConvWithLocalPMFSBlock, self).__init__()
         # 初始化参数
         self.in_ch = in_ch
         self.out_ch = out_ch

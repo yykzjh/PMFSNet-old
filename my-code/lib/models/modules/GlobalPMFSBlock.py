@@ -384,7 +384,7 @@ class GlobalPMFSBlock_AP(nn.Module):
 
         # 定义输出卷积，将通道数转换为输入的瓶颈层特征图通道数
         self.output_conv = nn.Sequential(
-            nn.Conv3d(self.ch_in, 2 * self.ch_bottle, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(self.ch_in, self.ch_bottle, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm3d(self.ch_bottle),
             nn.ReLU(inplace=True)
         )
