@@ -7,6 +7,7 @@
 @License  :   (C)Copyright 2023
 """
 import torch
+import torch.nn as nn
 
 from lib.utils import *
 
