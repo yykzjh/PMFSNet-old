@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+import sys
+sys.path.append(r"D:\Projects\Python\3D-tooth-segmentation\PMFS-Net：Polarized Multi-scale Feature Self-attention Network For CBCT Tooth Segmentation\my-code")
 from lib.utils import *
 
 
@@ -36,28 +38,18 @@ class AverageSymmetricSurfaceDistance(object):
 
         Returns:
         """
-        # ont-hot处理，将标注图在axis=1维度上扩张，该维度大小等于预测图的通道C大小，维度上每一个索引依次对应一个类别,(B, C, H, W, D)
-        target = expand_as_one_hot(target.long(), self.num_classes)
-
-        # 判断one-hot处理后标注图和预测图的维度是否都是5维
-        assert input.dim() == target.dim() == 5, "one-hot处理后标注图和预测图的维度不是都为5维！"
-        # 判断one-hot处理后标注图和预测图的尺寸是否一致
-        assert input.size() == target.size(), "one-hot处理后预测图和标注图的尺寸不一致！"
-
         # 对预测图进行Sigmiod或者Sofmax归一化操作
         input = self.normalization(input)
 
-        return compute_per_channel_assd(input, target, c=self.c)
+        # 将预测图像进行分割
+        seg = torch.argmax(input, dim=1)
+        # 判断预测图和真是标签图的维度大小是否一致
+        assert seg.shape == target.shape, "seg和target的维度大小不一致"
+        # 转换seg和target数据类型为整型
+        seg = seg.type(torch.uint8)
+        target = target.type(torch.uint8)
 
-
-
-
-
-
-
-
-
-
+        return compute_per_channel_assd(seg, target, self.num_classes, c=self.c)
 
 
 
@@ -68,9 +60,9 @@ if __name__ == '__main__':
 
     ASSD_metric = AverageSymmetricSurfaceDistance(c=6, num_classes=33)
 
-    batch_ASSD = ASSD_metric(pred, gt)
+    ASSD_per_channel = ASSD_metric(pred, gt)
 
-    print(batch_ASSD)
+    print(ASSD_per_channel)
 
 
 
