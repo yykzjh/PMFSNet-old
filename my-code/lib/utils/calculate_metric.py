@@ -224,6 +224,97 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
     return output
 
 
+def compute_per_channel_so(seg, target, num_classes, c=6, theta=1.0):
+    """
+    计算各类别的so
+
+    :param seg: 分割后的分割图
+    :param target: 真实标签图
+    :param num_classes: 通道和类别数
+    :param c: 连通度
+    :param theta: 判断两个点处于相同位置的最大距离
+    :return:
+    """
+    if c == 6:
+        neighbors = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]
+    elif c == 26:
+        neighbors = [[-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
+                     [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
+                     [0, 1, 0], [0, 1, 1], [1, -1, -1], [1, -1, 0], [1, -1, 1], [1, 0, -1], [1, 0, 0], [1, 0, 1],
+                     [1, 1, -1], [1, 1, 0], [1, 1, 1]]
+    else:
+        raise RuntimeError(f"不支持连通度为{c}")
+
+    # 获取各维度大小
+    bs, h, w, d = seg.shape
+    # 初始化输出
+    output = torch.zeros((bs, num_classes))
+
+    # 计算SO
+    for b in range(bs):  # 遍历batch
+        # 初始化存储各个类别的表面点坐标的数据结构
+        seg_surface = [[] for _ in range(num_classes)]
+        target_surface = [[] for _ in range(num_classes)]
+        # 遍历seg图像
+        for i in range(h):
+            for j in range(w):
+                for k in range(d):
+                    # 获取当前类别索引
+                    cur_class = seg[b, i, j, k]
+                    # 遍历周围的点
+                    for di, dj, dk in neighbors:
+                        # 获得周围的点坐标
+                        tmpi = i + di
+                        tmpj = j + dj
+                        tmpk = k + dk
+                        # 周围的点与当前点的类别索引不相同
+                        if 0 <= tmpi < h and 0 <= tmpj < w and 0 <= tmpk < d and seg[b, tmpi, tmpj, tmpk] == cur_class:
+                            continue
+                        # 记录表面点
+                        seg_surface[cur_class].append([i, j, k])
+                        break
+        # 遍历target图像
+        for i in range(h):
+            for j in range(w):
+                for k in range(d):
+                    # 获取当前类别索引
+                    cur_class = target[b, i, j, k]
+                    # 遍历周围的点
+                    for di, dj, dk in neighbors:
+                        # 获得周围的点坐标
+                        tmpi = i + di
+                        tmpj = j + dj
+                        tmpk = k + dk
+                        # 周围的点与当前点的类别索引不相同
+                        if 0 <= tmpi < h and 0 <= tmpj < w and 0 <= tmpk < d and target[b, tmpi, tmpj, tmpk] == cur_class:
+                            continue
+                        # 记录表面点
+                        target_surface[cur_class].append([i, j, k])
+                        break
+        # 遍历各类别
+        for cla in range(num_classes):
+            if len(seg_surface[cla]) == 0 or len(target_surface[cla]) == 0:
+                continue
+            # 计算seg中每个点到target表面点集合的距离
+            SO_sum = 0
+            for seg_point in seg_surface[cla]:
+                SO_min_val = math.sqrt(d * d + h * h + w * w)
+                for target_point in target_surface[cla]:
+                    l2_distance = np.linalg.norm(np.array(seg_point) - np.array(target_point), ord=2, keepdims=False)
+                    SO_min_val = min(SO_min_val, l2_distance)
+                if SO_min_val < theta:
+                    SO_sum += 1
+
+            # 计算当前类别的SO
+            SO_per_class = SO_sum / len(seg_surface[cla])
+            # 添加到结果数组
+            output[b, cla] = SO_per_class
+    # 计算各类别在batch上的平均SO
+    output = torch.mean(output, dim=0, keepdim=False)
+    return output
+
+
+
 def flatten(tensor):
     """Flattens a given tensor such that the channel axis is first.
     The shapes are transformed as follows:
