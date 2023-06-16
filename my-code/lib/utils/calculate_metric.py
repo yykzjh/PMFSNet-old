@@ -2,6 +2,8 @@ import math
 import numpy as np
 import torch
 
+import surface_distance as sd
+
 
 def compute_per_channel_dice(input, target, mode="extension", epsilon=1e-6):
     """
@@ -47,6 +49,10 @@ def compute_per_channel_hd(seg, target, num_classes, c=6):
     """
     if c == 6:
         neighbors = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]
+    elif c == 18:
+        neighbors = [[-1, -1, 0], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, 0], [0, -1, -1], [0, -1, 0], [0, -1, 1],
+                     [0, 0, -1], [0, 0, 1], [0, 1, -1], [0, 1, 0], [0, 1, 1], [1, -1, 0], [1, 0, -1], [1, 0, 0],
+                     [1, 0, 1], [1, 1, 0]]
     elif c == 26:
         neighbors = [[-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
                      [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
@@ -58,7 +64,7 @@ def compute_per_channel_hd(seg, target, num_classes, c=6):
     # 获取各维度大小
     bs, h, w, d = seg.shape
     # 初始化输出
-    output = torch.zeros((bs, num_classes))
+    output = torch.full((bs, num_classes), -1.0)
 
     # 计算HD
     for b in range(bs):  # 遍历batch
@@ -126,8 +132,53 @@ def compute_per_channel_hd(seg, target, num_classes, c=6):
             # 添加到结果数组
             output[b, cla] = HD_per_class
     # 计算各类别在batch上的平均HD
-    output = torch.mean(output, dim=0, keepdim=False)
-    return output
+    out = torch.full((num_classes, ), -1.0)
+    for cla in range(num_classes):
+        cnt = 0
+        acc_sum = 0
+        for b in range(bs):
+            if output[b, cla] != -1.0:
+                acc_sum += output[b, cla]
+                cnt += 1.0
+        out[cla] = acc_sum / cnt
+    return out
+
+
+def compute_per_channel_hd_lib(seg, target, num_classes):
+    """
+    计算各类别的hd
+    :param seg: 预测分割后的分割图
+    :param target: 真实标签图
+    :param num_classes: 通道和类别数
+    :return:
+    """
+    # 获取各维度大小
+    bs, _, h, w, d = seg.shape
+    # 初始化输出
+    output = torch.full((bs, num_classes), -1.0)
+
+    # 计算HD
+    for b in range(bs):  # 遍历batch
+        # 遍历各类别
+        for cla in range(num_classes):
+            # 分别计算两个表面点集合中各点到对面集合的距离
+            surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
+                                                             spacing_mm=(1.0, 1.0, 1.0))
+            if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
+                continue
+            # 计算一张图像一个类别的hd
+            output[b, cla] = sd.compute_robust_hausdorff(surface_distances, 95)
+    # 计算各类别在batch上的平均HD
+    out = torch.full((num_classes, ), -1.0)
+    for cla in range(num_classes):
+        cnt = 0
+        acc_sum = 0
+        for b in range(bs):
+            if output[b, cla] != -1.0:
+                acc_sum += output[b, cla]
+                cnt += 1.0
+        out[cla] = acc_sum / cnt
+    return out
 
 
 def compute_per_channel_assd(seg, target, num_classes, c=6):
@@ -141,6 +192,10 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
     """
     if c == 6:
         neighbors = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]
+    elif c == 18:
+        neighbors = [[-1, -1, 0], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, 0], [0, -1, -1], [0, -1, 0], [0, -1, 1],
+                     [0, 0, -1], [0, 0, 1], [0, 1, -1], [0, 1, 0], [0, 1, 1], [1, -1, 0], [1, 0, -1], [1, 0, 0],
+                     [1, 0, 1], [1, 1, 0]]
     elif c == 26:
         neighbors = [[-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
                      [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
@@ -152,7 +207,7 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
     # 获取各维度大小
     bs, h, w, d = seg.shape
     # 初始化输出
-    output = torch.zeros((bs, num_classes))
+    output = torch.full((bs, num_classes), -1.0)
 
     # 计算ASSD
     for b in range(bs):  # 遍历batch
@@ -197,6 +252,7 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
                         break
         # 遍历各类别
         for cla in range(num_classes):
+            print(len(seg_surface[cla]), len(target_surface[cla]))
             if len(seg_surface[cla]) == 0 or len(target_surface[cla]) == 0:
                 continue
             # 计算seg到target的ASSD
@@ -220,8 +276,59 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
             # 添加到结果数组
             output[b, cla] = ASSD_per_class
     # 计算各类别在batch上的平均ASSD
-    output = torch.mean(output, dim=0, keepdim=False)
-    return output
+    out = torch.full((num_classes, ), -1.0)
+    for cla in range(num_classes):
+        cnt = 0
+        acc_sum = 0
+        for b in range(bs):
+            if output[b, cla] != -1.0:
+                acc_sum += output[b, cla]
+                cnt += 1.0
+        out[cla] = acc_sum / cnt
+    return out
+
+
+def compute_per_channel_assd_lib(seg, target, num_classes):
+    """
+    计算各类别的assd
+    :param seg: 分割后的分割图
+    :param target: 真实标签图
+    :param num_classes: 通道和类别数
+    :return:
+    """
+    # 获取各维度大小
+    bs, _, h, w, d = seg.shape
+    # 初始化输出
+    output = torch.full((bs, num_classes), -1.0)
+
+    # 计算ASSD
+    for b in range(bs):  # 遍历batch
+        # 遍历各类别
+        for cla in range(num_classes):
+            # 分别计算两个表面点集合中各点到对面集合的距离
+            surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
+                                                             spacing_mm=(1.0, 1.0, 1.0))
+            if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
+                continue
+            # 计算一张图像一个类别的assd
+            assd_tuple = sd.compute_average_surface_distance(surface_distances)
+            print(len(surface_distances["distances_pred_to_gt"]), len(surface_distances["distances_gt_to_pred"]))
+
+            ASSD_per_class = ((assd_tuple[0] * len(surface_distances["distances_gt_to_pred"]) + assd_tuple[1] * len(surface_distances["distances_pred_to_gt"])) /
+                              (len(surface_distances["distances_gt_to_pred"]) +
+                              len(surface_distances["distances_pred_to_gt"])))
+            output[b, cla] = ASSD_per_class
+    # 计算各类别在batch上的平均ASSD
+    out = torch.full((num_classes, ), -1.0)
+    for cla in range(num_classes):
+        cnt = 0
+        acc_sum = 0
+        for b in range(bs):
+            if output[b, cla] != -1.0:
+                acc_sum += output[b, cla]
+                cnt += 1.0
+        out[cla] = acc_sum / cnt
+    return out
 
 
 def compute_per_channel_so(seg, target, num_classes, c=6, theta=1.0):
@@ -237,6 +344,10 @@ def compute_per_channel_so(seg, target, num_classes, c=6, theta=1.0):
     """
     if c == 6:
         neighbors = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]
+    elif c == 18:
+        neighbors = [[-1, -1, 0], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, 0], [0, -1, -1], [0, -1, 0], [0, -1, 1],
+                     [0, 0, -1], [0, 0, 1], [0, 1, -1], [0, 1, 0], [0, 1, 1], [1, -1, 0], [1, 0, -1], [1, 0, 0],
+                     [1, 0, 1], [1, 1, 0]]
     elif c == 26:
         neighbors = [[-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
                      [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
@@ -248,7 +359,7 @@ def compute_per_channel_so(seg, target, num_classes, c=6, theta=1.0):
     # 获取各维度大小
     bs, h, w, d = seg.shape
     # 初始化输出
-    output = torch.zeros((bs, num_classes))
+    output = torch.full((bs, num_classes), -1.0)
 
     # 计算SO
     for b in range(bs):  # 遍历batch
@@ -310,8 +421,16 @@ def compute_per_channel_so(seg, target, num_classes, c=6, theta=1.0):
             # 添加到结果数组
             output[b, cla] = SO_per_class
     # 计算各类别在batch上的平均SO
-    output = torch.mean(output, dim=0, keepdim=False)
-    return output
+    out = torch.full((num_classes, ), -1.0)
+    for cla in range(num_classes):
+        cnt = 0
+        acc_sum = 0
+        for b in range(bs):
+            if output[b, cla] != -1.0:
+                acc_sum += output[b, cla]
+                cnt += 1.0
+        out[cla] = acc_sum / cnt
+    return out
 
 
 
