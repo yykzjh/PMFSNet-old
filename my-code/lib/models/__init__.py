@@ -123,3 +123,48 @@ def get_model_optimizer_lr_scheduler(opt):
 
     return model, optimizer, lr_scheduler
 
+
+
+def get_model(opt):
+    # 初始化网络模型
+    if opt["model_name"] == "DenseVNet":
+        model = DenseVNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "UNet3D":
+        model = UNet3D(opt["in_channels"], opt["classes"], final_sigmoid=False)
+
+    elif opt["model_name"] == "VNet":
+        model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "AttentionUNet":
+        model = AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "R2UNet":
+        model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "R2AttentionUNet":
+        model = R2AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "HighResNet3D":
+        model = HighResNet3D(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "DenseVoxelNet":
+        model = DenseVoxelNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "MultiResUNet3D":
+        model = MultiResUNet3D(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "PMRFNet":
+        model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    else:
+        raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
+
+    # 把模型放到GPU上
+    model = model.to(opt["device"])
+
+    # 随机初始化模型参数
+    utils.init_weights(model, init_type="kaiming")
+
+    return model
+

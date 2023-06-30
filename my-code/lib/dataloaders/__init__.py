@@ -36,6 +36,23 @@ def get_dataloader(opt):
     return train_loader, valid_loader
 
 
+def get_test_dataloader(opt):
+    """
+    获取测试集数据加载器
+    :param opt: 参数字典
+    :return:
+    """
+    if opt["dataset_name"] == "NCTooth":
+        # 初始化数据集
+        valid_set = NCToothDataset(opt, mode="valid")
+
+        # 初始化数据加载器
+        valid_loader = DataLoader(valid_set, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
+
+    else:
+        raise RuntimeError(f"{opt['dataset_name']}是不支持的数据集！")
+
+    return valid_loader
 
 
 

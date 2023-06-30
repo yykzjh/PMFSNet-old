@@ -32,20 +32,23 @@ class NCToothDataset(Dataset):
         self.root = opt["dataset_path"]
         self.train_path = os.path.join(self.root, "train")
         self.val_path = os.path.join(self.root, "valid")
-        self.augmentations = [
-            opt["open_elastic_transform"], opt["open_gaussian_noise"], opt["open_random_flip"],
-            opt["open_random_rescale"], opt["open_random_rotate"], opt["open_random_shift"]]
-        self.sub_volume_root_dir = os.path.join(self.root, "sub_volumes")
-        if not os.path.exists(self.sub_volume_root_dir):
-            os.makedirs(self.sub_volume_root_dir)
-        self.sub_volume_path = os.path.join(self.sub_volume_root_dir, "-".join([str(item) for item in opt["crop_size"]])
-                                            + "_" + str(opt["samples_train"]) + ".npz")
-        self.selected_images = []
-        self.selected_position = []
-        self.transform = None
 
         # 分类创建子卷数据集
         if self.mode == 'train':
+            # 初始化数据增强列表
+            self.augmentations = [
+                opt["open_elastic_transform"], opt["open_gaussian_noise"], opt["open_random_flip"],
+                opt["open_random_rescale"], opt["open_random_rotate"], opt["open_random_shift"]]
+            # 初始化子卷数据集目录
+            self.sub_volume_root_dir = os.path.join(self.root, "sub_volumes")
+            if not os.path.exists(self.sub_volume_root_dir):
+                os.makedirs(self.sub_volume_root_dir)
+            self.sub_volume_path = os.path.join(self.sub_volume_root_dir,
+                                                "-".join([str(item) for item in opt["crop_size"]])
+                                                + "_" + str(opt["samples_train"]) + ".npz")
+            # 初始化子卷数据集存储数据结构
+            self.selected_images = []
+            self.selected_position = []
             # 定义数据增强
             all_augments = [
                  transforms.ElasticTransform(alpha=opt["elastic_transform_alpha"],
