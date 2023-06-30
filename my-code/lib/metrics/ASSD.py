@@ -112,12 +112,12 @@ if __name__ == '__main__':
     pred = torch.randn((4, 33, 32, 32, 16))
     gt = torch.randint(33, (4, 32, 32, 16))
 
-    # ASSD_metric = AverageSymmetricSurfaceDistance(num_classes=33, c=18, sigmoid_normalization=False)
-    # t1 = time.time()
-    # ASSD_per_channel = ASSD_metric(pred, gt)
-    # t2 = time.time()
-    # print("计算耗时不用库：{:.2f}秒".format(t2 - t1))
-    # print(ASSD_per_channel)
+    ASSD_metric = AverageSymmetricSurfaceDistance(num_classes=33, c=18, sigmoid_normalization=False)
+    t1 = time.time()
+    ASSD_per_channel = ASSD_metric(pred, gt)
+    t2 = time.time()
+    print("计算耗时不用库：{:.2f}秒".format(t2 - t1))
+    print(ASSD_per_channel)
 
     ASSD_metric = AverageSymmetricSurfaceDistance_lib(num_classes=33, sigmoid_normalization=False)
     t1 = time.time()

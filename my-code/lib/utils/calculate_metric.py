@@ -164,6 +164,7 @@ def compute_per_channel_hd_lib(seg, target, num_classes):
             # 分别计算两个表面点集合中各点到对面集合的距离
             surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
                                                              spacing_mm=(1.0, 1.0, 1.0))
+            # print(target[b, cla, ...].sum(), "/", len(surface_distances["distances_gt_to_pred"]), "   ", seg[b, cla, ...].sum(), "/", len(surface_distances["distances_pred_to_gt"]))
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
                 continue
             # 计算一张图像一个类别的hd
@@ -252,7 +253,7 @@ def compute_per_channel_assd(seg, target, num_classes, c=6):
                         break
         # 遍历各类别
         for cla in range(num_classes):
-            print(len(seg_surface[cla]), len(target_surface[cla]))
+            # print(len(seg_surface[cla]), len(target_surface[cla]))
             if len(seg_surface[cla]) == 0 or len(target_surface[cla]) == 0:
                 continue
             # 计算seg到target的ASSD
@@ -306,14 +307,12 @@ def compute_per_channel_assd_lib(seg, target, num_classes):
         # 遍历各类别
         for cla in range(num_classes):
             # 分别计算两个表面点集合中各点到对面集合的距离
-            surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
-                                                             spacing_mm=(1.0, 1.0, 1.0))
+            surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(), spacing_mm=(1.0, 1.0, 1.0))
+            # print(target[b, cla, ...].sum(), "/", len(surface_distances["distances_gt_to_pred"]), "   ", seg[b, cla, ...].sum(), "/", len(surface_distances["distances_pred_to_gt"]))
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
                 continue
             # 计算一张图像一个类别的assd
             assd_tuple = sd.compute_average_surface_distance(surface_distances)
-            print(len(surface_distances["distances_pred_to_gt"]), len(surface_distances["distances_gt_to_pred"]))
-
             ASSD_per_class = ((assd_tuple[0] * len(surface_distances["distances_gt_to_pred"]) + assd_tuple[1] * len(surface_distances["distances_pred_to_gt"])) /
                               (len(surface_distances["distances_gt_to_pred"]) +
                               len(surface_distances["distances_pred_to_gt"])))
