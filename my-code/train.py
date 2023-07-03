@@ -107,7 +107,7 @@ params = {
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
     "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
+    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
@@ -140,7 +140,7 @@ params = {
 
     "gamma": 0.1,  # 学习率衰减系数
 
-    "step_size": 4,  # StepLR的学习率衰减步长
+    "step_size": 9,  # StepLR的学习率衰减步长
 
     "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 
@@ -180,11 +180,11 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 10,  # 训练时的结束epoch
+    "end_epoch": 20,  # 训练时的结束epoch
 
     "best_dice": 0.60,  # 保存检查点的初始条件
 
-    "update_weight_freq": 2,  # 每多少个step更新一次网络权重，用于梯度累加
+    "update_weight_freq": 32,  # 每多少个step更新一次网络权重，用于梯度累加
 
     "terminal_show_freq": 256,  # 终端打印统计信息的频率,以step为单位
 

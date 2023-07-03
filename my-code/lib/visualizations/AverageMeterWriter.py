@@ -150,7 +150,6 @@ class AverageMeterWriter(object):
             for j, class_name in enumerate(self.class_names):
                 self.statistics_dict[metric_name][class_name] += per_class_metric[j].item() * cur_batch_size
 
-
     def display_terminal(self):
         print_info = ""
         # 评价指标作为列名
