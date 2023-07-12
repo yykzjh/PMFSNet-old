@@ -20,7 +20,7 @@ import lib.transforms as transforms
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -149,14 +149,6 @@ if __name__ == '__main__':
         print("完成初始化数据加载器")
         tester.test_image_set(test_loader)
 
-
-
-
-
-
-
-if __name__ == '__main__':
-    main()
 
 
 

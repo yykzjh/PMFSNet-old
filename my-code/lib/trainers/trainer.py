@@ -33,12 +33,16 @@ class Trainer:
 
         if not self.opt["optimize_params"]:
             # 创建训练执行目录和文件
-            self.execute_dir = os.path.join(opt["run_dir"], utils.datestr() + "_" + opt["model_name"] + "_" + opt["dataset_name"])
+            if self.opt["resume"] is None:
+                self.execute_dir = os.path.join(opt["run_dir"], utils.datestr() + "_" + opt["model_name"] + "_" + opt["dataset_name"])
+            else:
+                self.execute_dir = os.path.dirname(os.path.dirname(self.opt["resume"]))
             self.checkpoint_dir = os.path.join(self.execute_dir, "checkpoints")
             self.tensorboard_dir = os.path.join(self.execute_dir, "board")
             self.log_txt_path = os.path.join(self.execute_dir, "log.txt")
-            utils.make_dirs(self.checkpoint_dir)
-            utils.make_dirs(self.tensorboard_dir)
+            if self.opt["resume"] is None:
+                utils.make_dirs(self.checkpoint_dir)
+                utils.make_dirs(self.tensorboard_dir)
 
         # 训练时需要用到的参数
         self.start_epoch = self.opt["start_epoch"]

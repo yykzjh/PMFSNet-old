@@ -12,7 +12,6 @@ import math
 from collections import Counter
 
 from lib import utils
-import configs.config as config
 
 import matplotlib.pyplot as plt
 from mayavi import mlab

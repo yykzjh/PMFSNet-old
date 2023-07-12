@@ -2,8 +2,6 @@ import os
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
-import configs.config as config
-
 import lib.utils as utils
 
 

@@ -12,7 +12,6 @@ from nibabel.viewers import OrthoSlicer3D
 
 from lib import utils
 from lib.visualizations.AverageMeterWriter import AverageMeterWriter
-from lib.visualizations.SegmentMapDisplayer import display_compare_hist, display_segmentation_3D
 
 
 
@@ -109,7 +108,7 @@ class Tester():
         self.model.eval()
 
         with torch.no_grad():
-            for image, label in tqdm(test_loader):
+            for image, label in tqdm(test_loader, leave=True):
                 # 将图像放到GPU上
                 image = image.to(self.device)
                 label = label.to(self.device)
@@ -141,7 +140,7 @@ class Tester():
             total_slice_num *= math.ceil((ori_shape[i] - slice_shape[i]) / stride[i]) + 1
 
         # 设置进度条
-        with tqdm(desc="滑动切片分割", leave=True, total=total_slice_num, unit="slice", ncols=200, ascii=True) as bar:
+        with tqdm(total=total_slice_num, leave=False) as bar:
             # 在三个维度上进行滑动切片
             for shape0_start in range(0, ori_shape[0], stride[0]):
                 shape0_end = shape0_start + slice_shape[0]

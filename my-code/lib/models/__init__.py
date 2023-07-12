@@ -163,8 +163,5 @@ def get_model(opt):
     # 把模型放到GPU上
     model = model.to(opt["device"])
 
-    # 随机初始化模型参数
-    utils.init_weights(model, init_type="kaiming")
-
     return model
 
