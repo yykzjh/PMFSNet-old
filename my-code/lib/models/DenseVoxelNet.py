@@ -47,9 +47,9 @@ class DenseVoxelNet(nn.Module):
         y1 = self.conv_final(x)
 
         # Auxiliary mid-layer prediction, kind of long-skip connection
-        t = self.transpose(t)
-        y2 = self.conv_final(t)
-        return y1, y2
+        # t = self.transpose(t)
+        # y2 = self.conv_final(t)
+        return y1
 
 
 class _DenseLayer(nn.Sequential):
