@@ -483,7 +483,7 @@ class DenseConvWithLocalPMFSBlock(nn.Module):
     """
     带有极化多尺度特征增强自注意力模块的密集卷积块
     """
-    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=8):
+    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=4):
         """
         定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
 
