@@ -17,16 +17,16 @@ from lib.utils import *
 
 
 
-class SurfaceOverlappingValues(object):
+class SurfaceDice(object):
     def __init__(self, num_classes=33, theta=1.0, sigmoid_normalization=False):
         """
-        定义表面重叠数值(SO)评价指标计算器
+        定义表面Dice系数(SD)评价指标计算器
 
         :param num_classes: 类别数
         :param theta: 判断两个点处于相同位置的最大距离
         :param sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
         """
-        super(SurfaceOverlappingValues, self).__init__()
+        super(SurfaceDice, self).__init__()
         # 初始化参数
         self.num_classes = num_classes
         self.theta = theta
@@ -39,7 +39,7 @@ class SurfaceOverlappingValues(object):
 
     def __call__(self, input, target):
         """
-        表面重叠数值(SO)
+        表面Dice系数(SO)
 
         :param input: 网络模型输出的预测图,(B, C, H, W, D)
         :param target: 标注图像,(B, H, W, D)
@@ -65,11 +65,11 @@ if __name__ == '__main__':
     pred = torch.randn((4, 33, 32, 32, 16))
     gt = torch.randint(33, (4, 32, 32, 16))
 
-    SO_metric = SurfaceOverlappingValues(num_classes=33, c=6, theta=1.0)
+    SD_metric = SurfaceDice(num_classes=33, theta=1.0)
 
-    SO_per_channel = SO_metric(pred, gt)
+    SD_per_channel = SD_metric(pred, gt)
 
-    print(SO_per_channel)
+    print(SD_per_channel)
 
 
 

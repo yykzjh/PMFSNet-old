@@ -11,49 +11,6 @@ from lib.utils import *
 
 
 class AverageSymmetricSurfaceDistance(object):
-    def __init__(self, num_classes=33, c=6, sigmoid_normalization=False):
-        """
-        定义平均对称表面距离(ASSD)评价指标计算器
-        Args:
-            num_classes: 类别数
-            c: 连通度
-            sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
-        """
-        super(AverageSymmetricSurfaceDistance, self).__init__()
-        # 初始化参数
-        self.num_classes = num_classes
-        self.c = c
-        # 初始化sigmoid或者softmax归一化方法
-        if sigmoid_normalization:
-            self.normalization = nn.Sigmoid()
-        else:
-            self.normalization = nn.Softmax(dim=1)
-
-
-    def __call__(self, input, target):
-        """
-        平均对称表面距离(ASSD)
-        Args:
-            input: 网络模型输出的预测图,(B, C, H, W, D)
-            target: 标注图像,(B, H, W, D)
-
-        Returns:
-        """
-        # 对预测图进行Sigmiod或者Sofmax归一化操作
-        input = self.normalization(input)
-
-        # 将预测图像进行分割
-        seg = torch.argmax(input, dim=1)
-        # 判断预测图和真是标签图的维度大小是否一致
-        assert seg.shape == target.shape, "seg和target的维度大小不一致"
-        # 转换seg和target数据类型为整型
-        seg = seg.type(torch.uint8)
-        target = target.type(torch.uint8)
-
-        return compute_per_channel_assd(seg, target, self.num_classes, c=self.c)
-
-
-class AverageSymmetricSurfaceDistance_lib(object):
     def __init__(self, num_classes=33, sigmoid_normalization=False):
         """
         定义平均对称表面距离(ASSD)评价指标计算器
@@ -61,7 +18,7 @@ class AverageSymmetricSurfaceDistance_lib(object):
             num_classes: 类别数
             sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
         """
-        super(AverageSymmetricSurfaceDistance_lib, self).__init__()
+        super(AverageSymmetricSurfaceDistance, self).__init__()
         # 初始化参数
         self.num_classes = num_classes
         # 初始化sigmoid或者softmax归一化方法
@@ -104,7 +61,7 @@ class AverageSymmetricSurfaceDistance_lib(object):
         # 判断one-hot处理后标注图和分割图的尺寸是否一致
         assert seg.size() == target.size(), "one-hot处理后分割图和标注图的尺寸不一致！"
 
-        return compute_per_channel_assd_lib(seg, target, self.num_classes)
+        return compute_per_channel_assd(seg, target, self.num_classes)
 
 
 

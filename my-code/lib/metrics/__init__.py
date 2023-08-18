@@ -10,6 +10,8 @@ from .HD import *
 from .ASSD import *
 from .DICE import *
 from .SO import *
+from .SD import *
+from .IoU import *
 
 
 def get_metric(opt):
@@ -20,13 +22,19 @@ def get_metric(opt):
             metric.append(DICE(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"], mode=opt["dice_mode"]))
 
         elif metric_name == "ASSD":
-            metric.append(AverageSymmetricSurfaceDistance_lib(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"]))
+            metric.append(AverageSymmetricSurfaceDistance(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"]))
 
         elif metric_name == "HD":
-            metric.append(HausdorffDistance_lib(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"]))
+            metric.append(HausdorffDistance(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"]))
 
         elif metric_name == "SO":
-            metric.append(SurfaceOverlappingValues(num_classes=opt["classes"], c=6, theta=1.0))
+            metric.append(SurfaceOverlappingValues(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"], theta=1.0))
+
+        elif metric_name == "SD":
+            metric.append(SurfaceDice(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"], theta=1.0))
+
+        elif metric_name == "IoU":
+            metric.append(IoU(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"]))
 
         else:
             raise Exception(f"{metric_name}是不支持的评价指标！")

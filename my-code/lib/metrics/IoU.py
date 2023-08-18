@@ -17,19 +17,17 @@ from lib.utils import *
 
 
 
-class SurfaceOverlappingValues(object):
-    def __init__(self, num_classes=33, theta=1.0, sigmoid_normalization=False):
+class IoU(object):
+    def __init__(self, num_classes=33, sigmoid_normalization=False):
         """
-        定义表面重叠数值(SO)评价指标计算器
+        定义IoU评价指标计算器
 
         :param num_classes: 类别数
-        :param theta: 判断两个点处于相同位置的最大距离
         :param sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
         """
-        super(SurfaceOverlappingValues, self).__init__()
+        super(IoU, self).__init__()
         # 初始化参数
         self.num_classes = num_classes
-        self.theta = theta
         # 初始化sigmoid或者softmax归一化方法
         if sigmoid_normalization:
             self.normalization = nn.Sigmoid()
@@ -39,7 +37,7 @@ class SurfaceOverlappingValues(object):
 
     def __call__(self, input, target):
         """
-        表面重叠数值(SO)
+        IoU
 
         :param input: 网络模型输出的预测图,(B, C, H, W, D)
         :param target: 标注图像,(B, H, W, D)
@@ -56,7 +54,7 @@ class SurfaceOverlappingValues(object):
         seg = seg.type(torch.uint8)
         target = target.type(torch.uint8)
 
-        return compute_per_channel_so(seg, target, self.num_classes, theta=self.theta)
+        return compute_per_channel_iou(seg, target, self.num_classes, theta=self.theta)
 
 
 
