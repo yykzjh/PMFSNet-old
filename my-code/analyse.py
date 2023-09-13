@@ -15,6 +15,10 @@ import numpy as np
 import trimesh
 import json
 import torch
+from torchinfo import summary
+from thop import profile
+from ptflops import get_model_complexity_info
+from torchstat import stat
 import nibabel as nib
 from tqdm import tqdm
 from functools import reduce
@@ -23,6 +27,7 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 
 import lib.utils as utils
+import lib.models as models
 
 
 
@@ -314,6 +319,36 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
     print(weights_str + "]")
 
 
+def count_parameters(model):
+    """计算PyTorch模型的参数数量"""
+    return sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6
+
+def count_all_models_parameters(model_names_list):
+    # 先构造参数字典
+    opt = {
+        "in_channels": 1,
+        "classes": 2,
+        "device": "cpu",
+    }
+    # 遍历统计各个模型参数量
+    for model_name in model_names_list:
+        # 获取当前模型
+        opt["model_name"] = model_name
+        model = models.get_model(opt)
+
+        print("***************************************** model name: {} *****************************************".format(model_name))
+
+        print("params: {:.6f}M".format(count_parameters(model)))
+
+        input = torch.randn(1, 1, 160, 160, 96).to(opt["device"])
+        flops, params = profile(model, (input,))
+        print("flops: {:.6f}G, params: {:.6f}M".format(flops / 1e9, params / 1e6))
+
+        flops, params = get_model_complexity_info(model, (1, 160, 160, 96), as_strings=False, print_per_layer_stat=False)
+        print("flops: {:.6f}G, params: {:.6f}M".format(flops / 1e9, params / 1e6))
+
+
+
 
 
 
@@ -330,7 +365,9 @@ if __name__ == '__main__':
     # analyse_image_label_consistency(r"./datasets/NC-release-data")
 
     # 分析数据集的Clip上下界、均值和方差
-    analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
+    # analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
 
-
+    # 统计所有网络模型的参数量
+    count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+                                 "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
 
