@@ -100,14 +100,14 @@ params = {
 
     "create_data": False,  # 是否重新分割子卷训练集
 
-    "batch_size": 2,  # batch_size大小
+    "batch_size": 1,  # batch_size大小
 
-    "num_workers": 4,  # num_workers大小
+    "num_workers": 2,  # num_workers大小
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "PMRFNet"]
+    "model_name": "UNETR",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR" "PMRFNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
@@ -173,7 +173,7 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "use_amp": False,  # 是否使用自动混合精度
 
