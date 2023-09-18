@@ -55,8 +55,10 @@ def weights_init_kaiming(m):
         nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
         if m.bias is not None: nn.init.constant_(m.bias.data, 0)
     elif isinstance(m, (nn.BatchNorm3d, nn.GroupNorm, nn.InstanceNorm3d)):
-        nn.init.normal_(m.weight.data, 1.0, 0.02)
-        nn.init.constant_(m.bias.data, 0.0)
+        if m.weight is not None:
+            nn.init.normal_(m.weight.data, 1.0, 0.02)
+        if m.bias is not None:
+            nn.init.constant_(m.bias.data, 0.0)
 
 
 def weights_init_orthogonal(m):
