@@ -15,6 +15,8 @@ import torch.nn as nn
 
 from collections import OrderedDict
 
+from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock
+
 
 
 
@@ -320,11 +322,12 @@ class GlobalPMFSBlock_AP(nn.Module):
     """
     使用全局的多尺度特征扩充注意力关注点数量，从而对各尺度特征进行增强的全局极化多尺度特征自注意力模块
     """
-    def __init__(self, ch_bottle, ch, ch_k, ch_v, br):
+    def __init__(self, in_channels, max_pool_kernels, ch, ch_k, ch_v, br):
         """
         定义一个全局的极化多尺度特征自注意力模块
 
-        :param ch_bottle: 最底层瓶颈特征的通道数
+        :param in_channels: 输入各尺度特征图的通道数
+        :param max_pool_kernels: 输入各尺度特征图的下采样核大小
         :param ch: 全局特征统一的通道数
         :param ch_k: K的通道数
         :param ch_v: V的通道数
@@ -332,62 +335,59 @@ class GlobalPMFSBlock_AP(nn.Module):
         """
         super(GlobalPMFSBlock_AP, self).__init__()
         # 初始化参数
-        self.ch_bottle = ch_bottle
+        self.ch_bottle = in_channels[-1]
         self.ch = ch
         self.ch_k = ch_k
         self.ch_v = ch_v
         self.br = br
         self.ch_in = self.ch * self.br
 
-        # 先确定每个特征图对应的最大池化层的核以及步长大小
-        self.max_pool_size = [2 ** i for i in range(self.br)]
+        DepthWiseSeparateConvBlock
+
+        # 定义通道的不同感受野分支的卷积
+        self.ch_convs = nn.ModuleList([
+            DepthWiseSeparateConvBlock(
+                in_channel=in_channel,
+                out_channel=self.ch,
+                stride=1
+            )
+            for in_channel in in_channels
+        ])
+
         # 定义将全局特征下采样到相同尺寸的最大池化层
         self.max_pool_layers = nn.ModuleList([
             nn.MaxPool3d(kernel_size=k, stride=k)
-            for k in self.max_pool_size
-        ])
-        # 定义通道的不同感受野分支的卷积
-        self.ch_convs = nn.ModuleList([
-            nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d(self.ch_bottle // k, self.ch, kernel_size=1)),
-                ("bn", nn.BatchNorm3d(self.ch)),
-                ("relu", nn.ReLU(inplace=True))
-            ]))
-            for k in self.max_pool_size
+            for k in max_pool_kernels
         ])
 
         # 定义通道Wq卷积
-        self.ch_Wq = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        self.ch_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
         # 定义通道Wk卷积
-        self.ch_Wk = nn.Conv3d(self.ch_in, 1, kernel_size=5, stride=1, padding=2, bias=True)
+        self.ch_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=1, stride=1)
         # 定义通道Wv卷积
-        self.ch_Wv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        self.ch_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
         # 定义通道K的softmax
         self.ch_softmax = nn.Softmax(dim=1)
         # 定义对通道分数矩阵的卷积
-        self.ch_score_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1)
+        self.ch_score_conv = nn.Conv3d(self.ch_in, self.ch_in, 1)
         # 定义对通道分数矩阵的LayerNorm层归一化
         self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1, 1))
         # 定义sigmoid
         self.sigmoid = nn.Sigmoid()
 
         # 定义空间Wq卷积
-        self.sp_Wq = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
         # 定义空间Wk卷积
-        self.sp_Wk = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
         # 定义空间Wv卷积
-        self.sp_Wv = nn.Conv3d(self.ch_in, self.br * self.ch_v, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, stride=1)
         # 定义空间K的softmax
         self.sp_softmax = nn.Softmax(dim=-1)
         # 定义空间卷积，还原通道数
-        self.sp_output_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+        self.sp_output_conv = DepthWiseSeparateConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, stride=1)
 
         # 定义输出卷积，将通道数转换为输入的瓶颈层特征图通道数
-        self.output_conv = nn.Sequential(
-            nn.Conv3d(self.ch_in, self.ch_bottle, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm3d(self.ch_bottle),
-            nn.ReLU(inplace=True)
-        )
+        self.output_conv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_bottle, stride=1)
 
     def forward(self, feature_maps):
         # 用最大池化统一特征图尺寸
@@ -454,7 +454,20 @@ class GlobalPMFSBlock_AP(nn.Module):
 
 
 
+if __name__ == '__main__':
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    x = [
+        torch.randn((1, 32, 80, 80, 48)).to(device),
+        torch.randn((1, 64, 40, 40, 24)).to(device),
+        torch.randn((1, 128, 20, 20, 12)).to(device),
+    ]
+
+    model = GlobalPMFSBlock_AP([32, 64, 128], [4, 2, 1], 64, 64, 64, 3).to(device)
+
+    output = model(x)
+
+    print(output.size())
 
 
 

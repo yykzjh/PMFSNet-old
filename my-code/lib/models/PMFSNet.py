@@ -17,76 +17,69 @@ import torch.nn as nn
 from lib.models.modules.UpConv import UpConv
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
-from lib.models.modules.LocalPMFSBlock import DenseConvWithLocalPMFSBlock
+from lib.models.modules.LocalPMFSBlock import DownSampleWithLocalPMFSBlock
 from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP
 
 
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
-                 basic_module=DenseConvWithLocalPMFSBlock,
+                 basic_module=DownSampleWithLocalPMFSBlock,
                  global_module=GlobalPMFSBlock_AP):
         super(PMFSNet, self).__init__()
 
-        self.Local1 = basic_module(in_channels, 32)
+        downsample_channels = [32, 64, 128]
+        units = [5, 10, 10]
+        growth_rates = [4, 8, 16]
 
-        self.down1 = nn.Conv3d(32, 32, kernel_size=3, stride=2, padding=1)
-        self.Local2 = basic_module(32, 64)
+        self.down_convs = nn.ModuleList()
+        for i in range(3):
+            self.down_convs.append(
+                basic_module(
+                    in_channel=(1 if i == 0 else downsample_channels[i-1]),
+                    out_channel=downsample_channels[i],
+                    unit=units[i],
+                    growth_rate=growth_rates[i]
+                )
+            )
 
-        self.down2 = nn.Conv3d(64, 64, kernel_size=3, stride=2, padding=1)
-        self.Local3 = basic_module(64, 128)
+        self.Global = global_module(
+            in_channels=downsample_channels,
+            max_pool_kernels=[4, 2, 1],
+            ch=64,
+            ch_k=64,
+            ch_v=64,
+            br=3
+        )
 
-        self.down3 = nn.Conv3d(128, 128, kernel_size=3, stride=2, padding=1)
-        self.Local4 = basic_module(128, 256)
+        self.up2 = UpConv(ch_in=128, ch_out=64)
+        self.up_conv2 = basic_module(in_channel=128, out_channel=64, unit=units[1], growth_rate=growth_rates[1])
 
-        self.Global = global_module(256, 128, 64, 64, 4)
+        self.up1 = UpConv(ch_in=64, ch_out=32)
+        self.up_conv1 = basic_module(in_channel=64, out_channel=32, unit=units[0], growth_rate=growth_rates[0])
 
-        self.Up3 = UpConv(ch_in=256, ch_out=128)
-        self.Att3 = GridAttentionGate3d(F_l=128, F_g=256, F_int=64)
-        self.Up_Local3 = basic_module(256, 128)
+        self.out_conv = UpConv(ch_in=32, ch_out=out_channels, is_out=True)
 
-        self.Up2 = UpConv(ch_in=128, ch_out=64)
-        self.Att2 = GridAttentionGate3d(F_l=64, F_g=128, F_int=32)
-        self.Up_Local2 = basic_module(128, 64)
 
-        self.Up1 = UpConv(ch_in=64, ch_out=32)
-        self.Att1 = GridAttentionGate3d(F_l=32, F_g=64, F_int=16)
-        self.Up_Local1 = basic_module(64, 32)
-
-        self.Conv_1x1 = nn.Conv3d(32, out_channels, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
-        # encoding path
-        x1 = self.Local1(x)
+        # encoding
+        x1 = self.down_convs[0](x)
+        x2 = self.down_convs[1](x1)
+        x3 = self.down_convs[2](x2)
 
-        x2 = self.down1(x1)
-        x2 = self.Local2(x2)
+        d3 = self.Global([x1, x2, x3])
 
-        x3 = self.down2(x2)
-        x3 = self.Local3(x3)
-
-        x4 = self.down3(x3)
-        x4 = self.Local4(x4)
-
-        d4 = self.Global([x4, x3, x2, x1])
-
-        # decoding + concat path
-        d3 = self.Up3(d4)
-        x3 = self.Att3(x=x3, g=d4)[0]
-        d3 = torch.cat((x3, d3), dim=1)
-        d3 = self.Up_Local3(d3)
-
-        d2 = self.Up2(d3)
-        x2 = self.Att2(x=x2, g=d3)[0]
+        # decoding + concat
+        d2 = self.up2(d3)
         d2 = torch.cat((x2, d2), dim=1)
-        d2 = self.Up_Local2(d2)
+        d2 = self.up_conv2(d2)
 
-        d1 = self.Up1(d2)
-        x1 = self.Att1(x=x1, g=d2)[0]
+        d1 = self.up1(d2)
         d1 = torch.cat((x1, d1), dim=1)
-        d1 = self.Up_Local1(d1)
+        d1 = self.up_conv1(d1)
 
-        out = self.Conv_1x1(d1)
+        out = self.out_conv(d1)
 
         return out
 
@@ -95,7 +88,7 @@ class PMFSNet(nn.Module):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     x = torch.randn((1, 1, 160, 160, 96)).to(device)
 

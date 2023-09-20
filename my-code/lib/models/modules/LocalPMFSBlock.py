@@ -16,6 +16,7 @@ import torch.nn as nn
 from collections import OrderedDict
 
 from lib.models.modules.PolarizedSelfAttention3d import SequentialPolarizedSelfAttention3d
+from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock
 
 
 
@@ -326,11 +327,11 @@ class LocalPMFSBlock_AP(nn.Module):
         self.ch_in = self.ch * self.br
 
         # 定义通道Wq卷积
-        self.ch_Wq = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        self.ch_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
         # 定义通道Wk卷积
-        self.ch_Wk = nn.Conv3d(self.ch_in, 1, kernel_size=5, stride=1, padding=2, bias=True)
+        self.ch_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=1, stride=1)
         # 定义通道Wv卷积
-        self.ch_Wv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
+        self.ch_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
         # 定义通道K的softmax
         self.ch_softmax = nn.Softmax(dim=1)
         # 定义对通道分数矩阵的卷积
@@ -343,15 +344,15 @@ class LocalPMFSBlock_AP(nn.Module):
         # self.ch_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
 
         # 定义空间Wq卷积
-        self.sp_Wq = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
         # 定义空间Wk卷积
-        self.sp_Wk = nn.Conv3d(self.ch_in, self.br * self.ch_k, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
         # 定义空间Wv卷积
-        self.sp_Wv = nn.Conv3d(self.ch_in, self.br * self.ch_v, kernel_size=1, stride=1, groups=self.br)
+        self.sp_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, stride=1)
         # 定义空间K的softmax
         self.sp_softmax = nn.Softmax(dim=-1)
         # 定义空间卷积，还原通道数
-        self.sp_output_conv = nn.Conv3d(self.br * self.ch_v, self.ch_in, kernel_size=1, stride=1, groups=self.br)
+        self.sp_output_conv = DepthWiseSeparateConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, stride=1)
         # # 定义空间输出前的前馈卷积
         # self.sp_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1, stride=1, groups=self.br)
 
@@ -479,73 +480,105 @@ class LocalPMFSBlock_AP(nn.Module):
 #         return out
 
 
-class DenseConvWithLocalPMFSBlock(nn.Module):
-    """
-    带有极化多尺度特征增强自注意力模块的密集卷积块
-    """
-    def __init__(self, in_ch, out_ch, dilations=(1, 2, 3), r=2):
-        """
-        定义一个带有极化多尺度特征增强自注意力模块的密集卷积块
+class DenseFeatureStackWithLocalPMFSBlock(nn.Module):
 
-        :param in_ch: 输入通道数
-        :param out_ch: 输出通道数
-        :param dilations: 各卷积层空洞率，长度表明堆叠次数
-        :param r: 内部通道数相对于输出通道数的衰减率
+    def __init__(self, in_channel, unit, growth_rate):
         """
-        super(DenseConvWithLocalPMFSBlock, self).__init__()
-        # 初始化参数
-        self.in_ch = in_ch
-        self.out_ch = out_ch
-        self.dilations = dilations
-        self.inner_ch = self.out_ch // r
-        self.layer_num = len(self.dilations)
-        # 将输入特征通道压缩
-        self.input_conv = nn.Conv3d(self.in_ch, self.inner_ch, kernel_size=1, stride=1)
-        # 定义多次的堆叠密集卷积层，每层包括空洞卷积、BN、ReLU、PMFSBlock
-        self.dense_conv_layers = nn.ModuleList([
-            nn.Sequential(OrderedDict([
-                ("conv", nn.Conv3d((i+1)*self.inner_ch, self.inner_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False)),
-                ("bn", nn.BatchNorm3d(self.inner_ch)),
-                ("relu", nn.ReLU(inplace=True))
-            ]))
-            for i, dilation in enumerate(self.dilations)
-        ])
-        self.pmfs = LocalPMFSBlock_AP(self.inner_ch, self.inner_ch//2, self.inner_ch//2, self.layer_num + 1)
-        # 输出前将通道数卷积到输出值
-        self.output_conv = nn.Conv3d((self.layer_num + 1) * self.inner_ch, self.out_ch, kernel_size=1, stride=1)
+        定义一个带有局部极化多尺度特征增强自注意力模块的密集卷积块
 
+        :param in_channel: 输入通道数
+        :param unit: 密集堆叠单元个数
+        :param growth_rate: 每次堆叠增加的通道数
+        """
+        super(DenseFeatureStackWithLocalPMFSBlock, self).__init__()
+
+        self.conv_units = torch.nn.ModuleList()
+        self.pmfs_units = torch.nn.ModuleList()
+        for i in range(unit):
+            self.conv_units.append(
+                DepthWiseSeparateConvBlock(
+                    in_channel=in_channel,
+                    out_channel=growth_rate,
+                    stride=1
+                )
+            )
+            self.pmfs_units.append(
+                LocalPMFSBlock_AP(
+                    ch=growth_rate,
+                    ch_k=growth_rate,
+                    ch_v=growth_rate,
+                    br=i+1
+                )
+            )
+            in_channel += growth_rate
 
     def forward(self, x):
-        # 获得输入特征图维度信息
-        bs, c, d, h, w = x.size()
+        stack_feature = None
 
-        # 将输入特征通道压缩
-        x = self.input_conv(x)
+        for i, conv in enumerate(self.conv_units):
+            if stack_feature is None:
+                inputs = x
+            else:
+                inputs = torch.cat([x, stack_feature], dim=1)
+            out = conv(inputs)
+            if stack_feature is None:
+                stack_feature = out
+            else:
+                stack_feature = torch.cat([stack_feature, out], dim=1)
+            stack_feature = self.pmfs_units[i](stack_feature)
 
-        # 遍历计算堆叠密集卷积层
-        for i, layer in enumerate(self.dense_conv_layers):
-            y = layer(x)
-            # concat
-            x = torch.cat([x, y], dim=1)
+        return torch.cat([x, stack_feature], dim=1)
 
 
-        # pmfs特征增强
-        x = self.pmfs(x)
+class DownSampleWithLocalPMFSBlock(nn.Module):
+    """
+    带有局部极化多尺度特征增强自注意力模块的下采样模块
+    """
+    def __init__(self, in_channel, out_channel, unit, growth_rate):
+        """
+        带有局部极化多尺度特征增强自注意力模块的下采样模块
 
-        # 输出前的卷积层
-        out = self.output_conv(x)
+        :param in_channel: 输入通道数
+        :param out_channel: 输出通道数
+        :param unit: 密集堆叠单元个数
+        :param growth_rate: 每次堆叠增加的通道数
+        """
+        super(DownSampleWithLocalPMFSBlock, self).__init__()
 
-        return out
+        self.downsample = DepthWiseSeparateConvBlock(
+            in_channel=in_channel,
+            out_channel=out_channel,
+            stride=2
+        )
+
+        self.dfs_with_pmfs = DenseFeatureStackWithLocalPMFSBlock(
+            in_channel=out_channel,
+            unit=unit,
+            growth_rate=growth_rate
+        )
+
+        self.out_conv = DepthWiseSeparateConvBlock(
+            in_channel=out_channel + unit * growth_rate,
+            out_channel=out_channel,
+            stride=1
+        )
+
+    def forward(self, x):
+        x = self.downsample(x)
+        x = self.dfs_with_pmfs(x)
+        x = self.out_conv(x)
+
+        return x
 
 
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    x = torch.randn((1, 128, 160, 160, 96)).to(device)
+    x = torch.randn((1, 64, 32, 32, 32)).to(device)
 
-    model = LocalPMFSBlock_AP(32, 32, 32, 4).to(device)
+    model = DownSampleWithLocalPMFSBlock(64, 128, 10, 16).to(device)
 
     output = model(x)
 
