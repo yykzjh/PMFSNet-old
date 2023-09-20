@@ -53,10 +53,10 @@ class PMFSNet(nn.Module):
         )
 
         self.up2 = UpConv(ch_in=128, ch_out=64)
-        self.up_conv2 = basic_module(in_channel=128, out_channel=64, unit=units[1], growth_rate=growth_rates[1])
+        self.up_conv2 = basic_module(in_channel=128, out_channel=64, unit=units[1], growth_rate=growth_rates[1], downsample=False)
 
         self.up1 = UpConv(ch_in=64, ch_out=32)
-        self.up_conv1 = basic_module(in_channel=64, out_channel=32, unit=units[0], growth_rate=growth_rates[0])
+        self.up_conv1 = basic_module(in_channel=64, out_channel=32, unit=units[0], growth_rate=growth_rates[0], downsample=False)
 
         self.out_conv = UpConv(ch_in=32, ch_out=out_channels, is_out=True)
 

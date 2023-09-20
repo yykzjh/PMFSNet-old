@@ -534,7 +534,7 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
     """
     带有局部极化多尺度特征增强自注意力模块的下采样模块
     """
-    def __init__(self, in_channel, out_channel, unit, growth_rate):
+    def __init__(self, in_channel, out_channel, unit, growth_rate, downsample=True):
         """
         带有局部极化多尺度特征增强自注意力模块的下采样模块
 
@@ -542,13 +542,14 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
         :param out_channel: 输出通道数
         :param unit: 密集堆叠单元个数
         :param growth_rate: 每次堆叠增加的通道数
+        :param downsample: 是否下采样
         """
         super(DownSampleWithLocalPMFSBlock, self).__init__()
 
         self.downsample = DepthWiseSeparateConvBlock(
             in_channel=in_channel,
             out_channel=out_channel,
-            stride=2
+            stride=(2 if downsample else 1)
         )
 
         self.dfs_with_pmfs = DenseFeatureStackWithLocalPMFSBlock(
