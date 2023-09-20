@@ -28,7 +28,7 @@ class PMFSNet(nn.Module):
                  global_module=GlobalPMFSBlock_AP):
         super(PMFSNet, self).__init__()
 
-        downsample_channels = [32, 64, 128]
+        downsample_channels = [16, 24, 32]
         units = [5, 10, 10]
         growth_rates = [4, 8, 16]
 
@@ -46,19 +46,19 @@ class PMFSNet(nn.Module):
         self.Global = global_module(
             in_channels=downsample_channels,
             max_pool_kernels=[4, 2, 1],
-            ch=64,
-            ch_k=64,
-            ch_v=64,
+            ch=downsample_channels[2],
+            ch_k=downsample_channels[2],
+            ch_v=downsample_channels[2],
             br=3
         )
 
-        self.up2 = UpConv(ch_in=128, ch_out=64)
-        self.up_conv2 = basic_module(in_channel=128, out_channel=64, unit=units[1], growth_rate=growth_rates[1], downsample=False)
+        self.up2 = UpConv(ch_in=downsample_channels[2], ch_out=downsample_channels[1])
+        self.up_conv2 = basic_module(in_channel=2*downsample_channels[1], out_channel=downsample_channels[1], unit=units[1], growth_rate=growth_rates[1], downsample=False)
 
-        self.up1 = UpConv(ch_in=64, ch_out=32)
-        self.up_conv1 = basic_module(in_channel=64, out_channel=32, unit=units[0], growth_rate=growth_rates[0], downsample=False)
+        self.up1 = UpConv(ch_in=downsample_channels[1], ch_out=downsample_channels[0])
+        self.up_conv1 = basic_module(in_channel=2*downsample_channels[0], out_channel=downsample_channels[0], unit=units[0], growth_rate=growth_rates[0], downsample=False)
 
-        self.out_conv = UpConv(ch_in=32, ch_out=out_channels, is_out=True)
+        self.out_conv = UpConv(ch_in=downsample_channels[0], ch_out=out_channels, is_out=True)
 
 
 
