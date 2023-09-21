@@ -16,7 +16,7 @@ import torch.nn as nn
 from collections import OrderedDict
 
 from lib.models.modules.PolarizedSelfAttention3d import SequentialPolarizedSelfAttention3d
-from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock
+from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock, SingleConvBlock
 
 
 
@@ -327,11 +327,11 @@ class LocalPMFSBlock_AP(nn.Module):
         self.ch_in = self.ch * self.br
 
         # 定义通道Wq卷积
-        self.ch_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
+        self.ch_Wq = SingleConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, kernel_size=1, stride=1)
         # 定义通道Wk卷积
-        self.ch_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=1, stride=1)
+        self.ch_Wk = SingleConvBlock(in_channel=self.ch_in, out_channel=1, kernel_size=1, stride=1)
         # 定义通道Wv卷积
-        self.ch_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
+        self.ch_Wv = SingleConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, kernel_size=1, stride=1)
         # 定义通道K的softmax
         self.ch_softmax = nn.Softmax(dim=1)
         # 定义对通道分数矩阵的卷积
@@ -344,15 +344,15 @@ class LocalPMFSBlock_AP(nn.Module):
         # self.ch_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=5, stride=1, padding=2, groups=self.ch_in, bias=True)
 
         # 定义空间Wq卷积
-        self.sp_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
+        self.sp_Wq = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, kernel_size=1, stride=1)
         # 定义空间Wk卷积
-        self.sp_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
+        self.sp_Wk = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, kernel_size=1, stride=1)
         # 定义空间Wv卷积
-        self.sp_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, stride=1)
+        self.sp_Wv = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, kernel_size=1, stride=1)
         # 定义空间K的softmax
         self.sp_softmax = nn.Softmax(dim=-1)
         # 定义空间卷积，还原通道数
-        self.sp_output_conv = DepthWiseSeparateConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, stride=1)
+        self.sp_output_conv = SingleConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, kernel_size=3, stride=1)
         # # 定义空间输出前的前馈卷积
         # self.sp_forward_conv = nn.Conv3d(self.ch_in, self.ch_in, kernel_size=1, stride=1, groups=self.br)
 

@@ -15,7 +15,7 @@ import torch.nn as nn
 
 from collections import OrderedDict
 
-from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock
+from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock, SingleConvBlock
 
 
 
@@ -342,13 +342,12 @@ class GlobalPMFSBlock_AP(nn.Module):
         self.br = br
         self.ch_in = self.ch * self.br
 
-        DepthWiseSeparateConvBlock
-
         # 定义通道的不同感受野分支的卷积
         self.ch_convs = nn.ModuleList([
-            DepthWiseSeparateConvBlock(
+            SingleConvBlock(
                 in_channel=in_channel,
                 out_channel=self.ch,
+                kernel_size=3,
                 stride=1
             )
             for in_channel in in_channels
@@ -361,11 +360,11 @@ class GlobalPMFSBlock_AP(nn.Module):
         ])
 
         # 定义通道Wq卷积
-        self.ch_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
+        self.ch_Wq = SingleConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, kernel_size=1, stride=1)
         # 定义通道Wk卷积
-        self.ch_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=1, stride=1)
+        self.ch_Wk = SingleConvBlock(in_channel=self.ch_in, out_channel=1, kernel_size=1, stride=1)
         # 定义通道Wv卷积
-        self.ch_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, stride=1)
+        self.ch_Wv = SingleConvBlock(in_channel=self.ch_in, out_channel=self.ch_in, kernel_size=1, stride=1)
         # 定义通道K的softmax
         self.ch_softmax = nn.Softmax(dim=1)
         # 定义对通道分数矩阵的卷积
@@ -376,18 +375,18 @@ class GlobalPMFSBlock_AP(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         # 定义空间Wq卷积
-        self.sp_Wq = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
+        self.sp_Wq = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, kernel_size=1, stride=1)
         # 定义空间Wk卷积
-        self.sp_Wk = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, stride=1)
+        self.sp_Wk = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_k, kernel_size=1, stride=1)
         # 定义空间Wv卷积
-        self.sp_Wv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, stride=1)
+        self.sp_Wv = SingleConvBlock(in_channel=self.ch_in, out_channel=self.br * self.ch_v, kernel_size=1, stride=1)
         # 定义空间K的softmax
         self.sp_softmax = nn.Softmax(dim=-1)
         # 定义空间卷积，还原通道数
-        self.sp_output_conv = DepthWiseSeparateConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, stride=1)
+        self.sp_output_conv = SingleConvBlock(in_channel=self.br * self.ch_v, out_channel=self.ch_in, kernel_size=1, stride=1)
 
         # 定义输出卷积，将通道数转换为输入的瓶颈层特征图通道数
-        self.output_conv = DepthWiseSeparateConvBlock(in_channel=self.ch_in, out_channel=self.ch_bottle, stride=1)
+        self.output_conv = SingleConvBlock(in_channel=self.ch_in, out_channel=self.ch_bottle, kernel_size=3, stride=1)
 
     def forward(self, feature_maps):
         # 用最大池化统一特征图尺寸
