@@ -39,6 +39,10 @@ class SingleConvBlock(nn.Module):
             nn.ReLU(inplace=True)
         )
 
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
 
 class DepthWiseSeparateConvBlock(nn.Module):
     def __init__(self, in_channel, out_channel, stride):
