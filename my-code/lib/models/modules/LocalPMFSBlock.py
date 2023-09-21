@@ -502,14 +502,14 @@ class DenseFeatureStackWithLocalPMFSBlock(nn.Module):
                     stride=1
                 )
             )
-            self.pmfs_units.append(
-                LocalPMFSBlock_AP(
-                    ch=growth_rate,
-                    ch_k=growth_rate,
-                    ch_v=growth_rate,
-                    br=i+1
-                )
-            )
+            # self.pmfs_units.append(
+            #     LocalPMFSBlock_AP(
+            #         ch=growth_rate,
+            #         ch_k=growth_rate,
+            #         ch_v=growth_rate,
+            #         br=i+1
+            #     )
+            # )
             in_channel += growth_rate
 
     def forward(self, x):
@@ -525,7 +525,7 @@ class DenseFeatureStackWithLocalPMFSBlock(nn.Module):
                 stack_feature = out
             else:
                 stack_feature = torch.cat([stack_feature, out], dim=1)
-            stack_feature = self.pmfs_units[i](stack_feature)
+            # stack_feature = self.pmfs_units[i](stack_feature)
 
         return torch.cat([x, stack_feature], dim=1)
 
