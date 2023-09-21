@@ -20,6 +20,7 @@ from .R2AttentionUNet import R2AttentionU_Net
 from .HighResNet3D import HighResNet3D
 from .DenseVoxelNet import DenseVoxelNet
 from .MultiResUNet3D import MultiResUNet3D
+from .DenseASPPUNet import DenseASPPUNet
 
 from .PMFSNet import PMFSNet
 
@@ -53,6 +54,9 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["model_name"] == "MultiResUNet3D":
         model = MultiResUNet3D(in_channels=opt["in_channels"], classes=opt["classes"])
+
+    elif opt["model_name"] == "DenseASPPUNet":
+        model = DenseASPPUNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
@@ -154,6 +158,9 @@ def get_model(opt):
     elif opt["model_name"] == "MultiResUNet3D":
         model = MultiResUNet3D(in_channels=opt["in_channels"], classes=opt["classes"])
 
+    elif opt["model_name"] == "DenseASPPUNet":
+        model = DenseASPPUNet(in_channels=opt["in_channels"], classes=opt["classes"])
+
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
@@ -164,4 +171,3 @@ def get_model(opt):
     model = model.to(opt["device"])
 
     return model
-
