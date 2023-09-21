@@ -29,6 +29,17 @@ class ConvBlock(nn.Module):
         return x
 
 
+class SingleConvBlock(nn.Module):
+    def __init__(self, in_channel, out_channel, kernel_size, stride):
+        super(SingleConvBlock, self).__init__()
+
+        self.conv = nn.Sequential(
+            nn.Conv3d(in_channel, out_channel, kernel_size, stride, kernel_size//2, bias=False),
+            nn.BatchNorm3d(out_channel),
+            nn.ReLU(inplace=True)
+        )
+
+
 class DepthWiseSeparateConvBlock(nn.Module):
     def __init__(self, in_channel, out_channel, stride):
         super(DepthWiseSeparateConvBlock, self).__init__()
