@@ -71,7 +71,7 @@ class PMFSNet(nn.Module):
         # encoding
         x1, x1_skip = self.down_convs[0](x)
         x2, x2_skip = self.down_convs[1](x1)
-        x3, _ = self.down_convs[2](x2)
+        x3 = self.down_convs[2](x2)
 
         d3 = self.Global([x1, x2, x3])
 

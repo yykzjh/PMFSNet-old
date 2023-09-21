@@ -572,10 +572,11 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
         x = self.downsample(x)
         x = self.dfs_with_pmfs(x)
 
-        x_skip = None
         if self.skip:
             x_skip = self.skip_conv(x)
-        return x, x_skip
+            return x, x_skip
+        else:
+            return x
 
 
 
