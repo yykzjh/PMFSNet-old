@@ -534,42 +534,48 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
     """
     带有局部极化多尺度特征增强自注意力模块的下采样模块
     """
-    def __init__(self, in_channel, out_channel, unit, growth_rate, downsample=True):
+    def __init__(self, in_channel, base_channel, skip_channel, unit, growth_rate, downsample=True, skip=True):
         """
         带有局部极化多尺度特征增强自注意力模块的下采样模块
 
         :param in_channel: 输入通道数
-        :param out_channel: 输出通道数
+        :param base_channel: 基础通道数
+        :param skip_channel: 跳跃连接通道数
         :param unit: 密集堆叠单元个数
         :param growth_rate: 每次堆叠增加的通道数
         :param downsample: 是否下采样
+        :param skip: 是否产生跳跃连接特征图
         """
         super(DownSampleWithLocalPMFSBlock, self).__init__()
+        self.skip = skip
 
         self.downsample = DepthWiseSeparateConvBlock(
             in_channel=in_channel,
-            out_channel=out_channel,
+            out_channel=base_channel,
             stride=(2 if downsample else 1)
         )
 
         self.dfs_with_pmfs = DenseFeatureStackWithLocalPMFSBlock(
-            in_channel=out_channel,
+            in_channel=base_channel,
             unit=unit,
             growth_rate=growth_rate
         )
 
-        self.out_conv = DepthWiseSeparateConvBlock(
-            in_channel=out_channel + unit * growth_rate,
-            out_channel=out_channel,
-            stride=1
-        )
+        if skip:
+            self.skip_conv = DepthWiseSeparateConvBlock(
+                in_channel=base_channel + unit * growth_rate,
+                out_channel=skip_channel,
+                stride=1
+            )
 
     def forward(self, x):
         x = self.downsample(x)
         x = self.dfs_with_pmfs(x)
-        x = self.out_conv(x)
 
-        return x
+        x_skip = None
+        if self.skip:
+            x_skip = self.skip_conv(x)
+        return x, x_skip
 
 
 

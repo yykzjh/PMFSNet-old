@@ -28,35 +28,40 @@ class PMFSNet(nn.Module):
                  global_module=GlobalPMFSBlock_AP):
         super(PMFSNet, self).__init__()
 
-        downsample_channels = [16, 24, 32]
+        base_channels = [24, 24, 24]
+        skip_channels = [12, 24, None]
         units = [5, 10, 10]
         growth_rates = [4, 8, 16]
+        downsample_channels = [base_channels[i] + units[i] * growth_rates[i] for i in range(len(base_channels))]  # [44, 104, 184]
 
         self.down_convs = nn.ModuleList()
         for i in range(3):
             self.down_convs.append(
                 basic_module(
                     in_channel=(1 if i == 0 else downsample_channels[i-1]),
-                    out_channel=downsample_channels[i],
+                    base_channel=base_channels[i],
+                    skip_channel=skip_channels[i],
                     unit=units[i],
-                    growth_rate=growth_rates[i]
+                    growth_rate=growth_rates[i],
+                    skip=(i < 2)
                 )
             )
+
 
         self.Global = global_module(
             in_channels=downsample_channels,
             max_pool_kernels=[4, 2, 1],
-            ch=downsample_channels[2],
-            ch_k=downsample_channels[2],
-            ch_v=downsample_channels[2],
+            ch=48,
+            ch_k=48,
+            ch_v=48,
             br=3
         )
 
         self.up2 = UpConv(ch_in=downsample_channels[2], ch_out=downsample_channels[1])
-        self.up_conv2 = basic_module(in_channel=2*downsample_channels[1], out_channel=downsample_channels[1], unit=units[1], growth_rate=growth_rates[1], downsample=False)
+        self.up_conv2 = basic_module(in_channel=downsample_channels[1] + skip_channels[1], base_channel=base_channels[1], unit=units[1], growth_rate=growth_rates[1], downsample=False, skip=False)
 
         self.up1 = UpConv(ch_in=downsample_channels[1], ch_out=downsample_channels[0])
-        self.up_conv1 = basic_module(in_channel=2*downsample_channels[0], out_channel=downsample_channels[0], unit=units[0], growth_rate=growth_rates[0], downsample=False)
+        self.up_conv1 = basic_module(in_channel=downsample_channels[0] + skip_channels[0], base_channel=base_channels[0], unit=units[0], growth_rate=growth_rates[0], downsample=False, skip=False)
 
         self.out_conv = UpConv(ch_in=downsample_channels[0], ch_out=out_channels, is_out=True)
 
@@ -64,19 +69,19 @@ class PMFSNet(nn.Module):
 
     def forward(self, x):
         # encoding
-        x1 = self.down_convs[0](x)
-        x2 = self.down_convs[1](x1)
-        x3 = self.down_convs[2](x2)
+        x1, x1_skip = self.down_convs[0](x)
+        x2, x2_skip = self.down_convs[1](x1)
+        x3, _ = self.down_convs[2](x2)
 
         d3 = self.Global([x1, x2, x3])
 
         # decoding + concat
         d2 = self.up2(d3)
-        d2 = torch.cat((x2, d2), dim=1)
+        d2 = torch.cat((x2_skip, d2), dim=1)
         d2 = self.up_conv2(d2)
 
         d1 = self.up1(d2)
-        d1 = torch.cat((x1, d1), dim=1)
+        d1 = torch.cat((x1_skip, d1), dim=1)
         d1 = self.up_conv1(d1)
 
         out = self.out_conv(d1)
