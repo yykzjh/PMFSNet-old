@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
     # 初始化模型、优化器和学习率调整器
     model, optimizer, lr_scheduler = models.get_model_optimizer_lr_scheduler(params)
-    print("完成初始化模型、优化器和学习率调整器")
+    print("完成初始化模型:{}、优化器:{}和学习率调整器:{}".format(params["model_name"], params["optimizer_name"], params["lr_scheduler_name"]))
 
     # 初始化损失函数
     loss_function = losses.get_loss_function(params)
