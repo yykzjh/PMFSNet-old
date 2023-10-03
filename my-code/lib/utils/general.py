@@ -13,10 +13,12 @@ import torch.backends.cudnn as cudnn
 
 
 def reproducibility(seed, cuda, deterministic, benchmark):
+    random.seed(seed)
+    np.random.seed(seed)
     torch.manual_seed(seed)
     if cuda:
         torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
+
     cudnn.deterministic = deterministic
     cudnn.benchmark = benchmark
 

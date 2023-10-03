@@ -39,7 +39,7 @@ params = {
 
     "benchmark": True,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
 
-    "deterministic": False,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
+    "deterministic": True,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
 
     # —————————————————————————————————————————————     预处理       ————————————————————————————————————————————————————
 
@@ -131,11 +131,11 @@ params = {
 
     "weight_decay": 0.00005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
-    "momentum": 0.8064939684280367,  # 动量大小
+    "momentum": 0.8,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "StepLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
     "gamma": 0.1,  # 学习率衰减系数
@@ -150,11 +150,11 @@ params = {
 
     "T_mult": 2,  # CosineAnnealingWarmRestarts的周期放大倍数
 
-    "mode": "min",  # ReduceLROnPlateau的衡量指标变化方向
+    "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
-    "patience": 2,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
+    "patience": 1,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
 
-    "factor": 0.5084722568589964,  # ReduceLROnPlateau的衰减系数
+    "factor": 0.5,  # ReduceLROnPlateau的衰减系数
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 

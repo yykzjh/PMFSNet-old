@@ -6,6 +6,7 @@ import nni
 import torch
 import torch.optim as optim
 from torch.cuda.amp import autocast, GradScaler
+from torch.utils.tensorboard import SummaryWriter
 
 from lib import utils
 
@@ -43,6 +44,7 @@ class Trainer:
             if self.opt["resume"] is None:
                 utils.make_dirs(self.checkpoint_dir)
                 utils.make_dirs(self.tensorboard_dir)
+            self.writer = SummaryWriter(log_dir=self.tensorboard_dir, purge_step=0, max_queue=1, flush_secs=30)
 
         # 训练时需要用到的参数
         self.start_epoch = self.opt["start_epoch"]
@@ -70,19 +72,29 @@ class Trainer:
             # 当前epoch的验证阶段
             self.valid_epoch(epoch)
 
+            # 更新学习率
+            if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+                self.lr_scheduler.step(self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"])
+            else:
+                self.lr_scheduler.step()
+
             # epoch结束总的输出一下结果
-            print("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
+            print("epoch:[{:03d}/{:03d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
                   .format(epoch, self.end_epoch - 1,
+                          self.optimizer.param_groups[0]['lr'],
                           self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                           self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
                           self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
                           self.best_dice))
             if not self.opt["optimize_params"]:
-                utils.pre_write_txt("epoch:[{:03d}/{:03d}]  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
-                                    .format(epoch, self.end_epoch-1, self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
+                utils.pre_write_txt("epoch:[{:03d}/{:03d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  valid_dsc:{:.6f}  best_dsc:{:.6f}"
+                                    .format(epoch, self.end_epoch-1,
+                                            self.optimizer.param_groups[0]['lr'],
+                                            self.statistics_dict["train"]["loss"]/self.statistics_dict["train"]["count"],
                                             self.statistics_dict["train"]["DSC"]["avg"]/self.statistics_dict["train"]["count"],
                                             self.statistics_dict["valid"]["DSC"]["avg"]/self.statistics_dict["valid"]["count"],
                                             self.best_dice), self.log_txt_path)
+                self.write_statistcs(mode="epoch", iter=epoch)
 
             if self.opt["optimize_params"]:
                 # 向nni上报每个epoch验证集的平均dsc作为中间指标
@@ -163,6 +175,10 @@ class Trainer:
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
             t9 = time.time()
 
+            # 每一次参数更新都将统计数据写入到tensorboard
+            if (batch_idx + 1) % self.update_weight_freq == 0 and (not self.opt["optimize_params"]):
+                self.write_statistcs(mode="step", iter=epoch*len(self.train_data_loader)+batch_idx)
+
             # if (batch_idx + 1) % self.update_weight_freq == 0:
             #     print("----------------------------------batch 2----------------------------------")
             #     print("前向传播时间：{:.6f}秒".format(t1 - t0))
@@ -183,22 +199,20 @@ class Trainer:
 
             # 判断满不满足打印信息或者画图表的周期
             if (batch_idx + 1) % self.terminal_show_freq == 0:
-                print("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
-                      .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
+                print("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}"
+                      .format(epoch, self.end_epoch-1,
+                              batch_idx+1, len(self.train_data_loader),
+                              self.optimizer.param_groups[0]['lr'],
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                               self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"]))
                 if not self.opt["optimize_params"]:
-                    utils.pre_write_txt("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  loss:{:.6f}  dsc:{:.6f}"
-                                        .format(epoch, self.end_epoch-1, batch_idx+1, len(self.train_data_loader),
+                    utils.pre_write_txt("epoch:[{:03d}/{:03d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}"
+                                        .format(epoch, self.end_epoch-1,
+                                                batch_idx+1, len(self.train_data_loader),
+                                                self.optimizer.param_groups[0]['lr'],
                                                 self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                                                 self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"]),
                                         self.log_txt_path)
-
-        # 更新学习率
-        if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):
-            self.lr_scheduler.step(self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"])
-        else:
-            self.lr_scheduler.step()
 
 
     def valid_epoch(self, epoch):
@@ -235,6 +249,38 @@ class Trainer:
                 self.best_dice = cur_dsc
                 if not self.opt["optimize_params"]:
                     self.save(epoch, cur_dsc, self.best_dice, type="best")
+
+
+    def write_statistcs(self, mode="step", iter=None):
+        """
+        将统计信息写入到tensorboard图表中
+
+        :param mode: "step"训练时每一步的数据，"epoch"每个epoch结束后的数据
+        :param iter: 当前step次数
+        :return:
+        """
+        if mode == "step":
+            # 写入dice_loss
+            self.writer.add_scalar("step_train_loss",
+                                   self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
+                                   iter)
+            # 写入dsc评价指标
+            self.writer.add_scalar("step_train_dsc",
+                                   self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                                   iter)
+        else:
+            # 写入epoch_loss
+            self.writer.add_scalar("epoch_train_loss",
+                                   self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
+                                   iter)
+            # 写入train_dsc
+            self.writer.add_scalar("epoch_train_dsc",
+                                   self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                                   iter)
+            # 写入valid_dsc
+            self.writer.add_scalar("epoch_valid_dsc",
+                                   self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
+                                   iter)
 
 
     def split_forward(self, image, model):
