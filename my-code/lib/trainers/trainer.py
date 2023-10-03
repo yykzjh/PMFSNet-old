@@ -105,6 +105,10 @@ class Trainer:
             # 将在验证集上最优的dsc作为最终上报指标
             nni.report_final_result(self.best_dice)
 
+        # 关闭tensorboard
+        time.sleep(60)
+        self.writer.close()
+
 
 
     def train_epoch(self, epoch):
