@@ -31,8 +31,8 @@ class DenseVNet(nn.Module):
             )
             in_channels = num_downsample_channels[i] + units[i] * growth_rate[i]
 
-        self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
-        self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='trilinear', align_corners=True)
+        self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
+        self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='trilinear')
 
         self.out_conv = ConvBlock(
             in_channels=sum(num_skip_channels),
@@ -41,7 +41,7 @@ class DenseVNet(nn.Module):
             batch_norm=True,
             preactivation=True,
         )
-        self.upsample_out = torch.nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
+        self.upsample_out = torch.nn.Upsample(scale_factor=2, mode='trilinear')
 
 
     def forward(self, x):
