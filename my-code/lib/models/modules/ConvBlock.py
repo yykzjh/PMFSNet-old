@@ -11,22 +11,57 @@ import torch.nn as nn
 
 
 
-class ConvBlock(nn.Module):
-    def __init__(self, ch_in, ch_out):
-        super(ConvBlock, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv3d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.BatchNorm3d(ch_out),
-            nn.ReLU(inplace=True),
-            nn.Conv3d(ch_out, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.BatchNorm3d(ch_out),
-            nn.ReLU(inplace=True)
-        )
+class ConvBlock(torch.nn.Module):
+    def __init__(
+        self,
+        in_channel,
+        out_channel,
+        kernel_size,
+        stride=1,
+        batch_norm=True,
+        preactivation=False,
+    ):
+        super().__init__()
 
+        padding = kernel_size - stride
+        if padding % 2 != 0:
+            pad = torch.nn.ConstantPad3d(
+                tuple([padding % 2, padding - padding % 2] * 3), 0
+            )
+        else:
+            pad = torch.nn.ConstantPad3d(padding // 2, 0)
+
+        if preactivation:
+            layers = [
+                torch.nn.ReLU(),
+                pad,
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=out_channel,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                ),
+            ]
+            if batch_norm:
+                layers = [torch.nn.BatchNorm3d(in_channel)] + layers
+        else:
+            layers = [
+                pad,
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=out_channel,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                ),
+            ]
+            if batch_norm:
+                layers.append(torch.nn.BatchNorm3d(out_channel))
+            layers.append(torch.nn.ReLU())
+
+        self.conv = torch.nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        return self.conv(x)
 
 
 class SingleConvBlock(nn.Module):
@@ -51,11 +86,11 @@ class DepthWiseSeparateConvBlock(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv3d(in_channel, in_channel, 3, stride, 1, groups=in_channel, bias=False),
             nn.BatchNorm3d(in_channel),
-            nn.ReLU6(inplace=True),
+            nn.ReLU(inplace=True),
 
             nn.Conv3d(in_channel, out_channel, 1, 1, 0, bias=False),
             nn.BatchNorm3d(out_channel),
-            nn.ReLU6(inplace=True)
+            nn.ReLU(inplace=True)
         )
 
     def forward(self, x):

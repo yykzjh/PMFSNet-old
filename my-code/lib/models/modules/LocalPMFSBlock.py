@@ -16,7 +16,7 @@ import torch.nn as nn
 from collections import OrderedDict
 
 from lib.models.modules.PolarizedSelfAttention3d import SequentialPolarizedSelfAttention3d
-from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock, SingleConvBlock
+from lib.models.modules.ConvBlock import DepthWiseSeparateConvBlock, SingleConvBlock, ConvBlock
 
 
 
@@ -482,24 +482,28 @@ class LocalPMFSBlock_AP(nn.Module):
 
 class DenseFeatureStackWithLocalPMFSBlock(nn.Module):
 
-    def __init__(self, in_channel, unit, growth_rate):
+    def __init__(self, in_channel, kernel_size, unit, growth_rate):
         """
         定义一个带有局部极化多尺度特征增强自注意力模块的密集卷积块
 
         :param in_channel: 输入通道数
+        :param kernel_size: 卷积核大小
         :param unit: 密集堆叠单元个数
         :param growth_rate: 每次堆叠增加的通道数
         """
         super(DenseFeatureStackWithLocalPMFSBlock, self).__init__()
 
         self.conv_units = torch.nn.ModuleList()
-        self.pmfs_units = torch.nn.ModuleList()
+        # self.pmfs_units = torch.nn.ModuleList()
         for i in range(unit):
             self.conv_units.append(
-                DepthWiseSeparateConvBlock(
+                ConvBlock(
                     in_channel=in_channel,
                     out_channel=growth_rate,
-                    stride=1
+                    kernel_size=kernel_size,
+                    stride=1,
+                    batch_norm=True,
+                    preactivation=True
                 )
             )
             # self.pmfs_units.append(
@@ -534,12 +538,13 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
     """
     带有局部极化多尺度特征增强自注意力模块的下采样模块
     """
-    def __init__(self, in_channel, base_channel, unit, growth_rate, skip_channel=None, downsample=True, skip=True):
+    def __init__(self, in_channel, base_channel, kernel_size, unit, growth_rate, skip_channel=None, downsample=True, skip=True):
         """
-        带有局部极化多尺度特征增强自注意力模块的下采样模块
+        定义一个带有局部极化多尺度特征增强自注意力模块的下采样模块
 
         :param in_channel: 输入通道数
         :param base_channel: 基础通道数
+        :param kernel_size: 卷积核大小
         :param unit: 密集堆叠单元个数
         :param growth_rate: 每次堆叠增加的通道数
         :param skip_channel: 跳跃连接通道数
@@ -549,23 +554,30 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
         super(DownSampleWithLocalPMFSBlock, self).__init__()
         self.skip = skip
 
-        self.downsample = DepthWiseSeparateConvBlock(
+        self.downsample = ConvBlock(
             in_channel=in_channel,
             out_channel=base_channel,
-            stride=(2 if downsample else 1)
+            kernel_size=kernel_size,
+            stride=(2 if downsample else 1),
+            batch_norm=True,
+            preactivation=True
         )
 
         self.dfs_with_pmfs = DenseFeatureStackWithLocalPMFSBlock(
             in_channel=base_channel,
+            kernel_size=3,
             unit=unit,
             growth_rate=growth_rate
         )
 
         if skip:
-            self.skip_conv = DepthWiseSeparateConvBlock(
+            self.skip_conv = ConvBlock(
                 in_channel=base_channel + unit * growth_rate,
                 out_channel=skip_channel,
-                stride=1
+                kernel_size=3,
+                stride=1,
+                batch_norm=True,
+                preactivation=True
             )
 
     def forward(self, x):
