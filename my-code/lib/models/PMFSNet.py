@@ -51,14 +51,14 @@ class PMFSNet(nn.Module):
                 )
             )
 
-        # self.Global = global_module(
-        #     in_channels=downsample_channels,
-        #     max_pool_kernels=[4, 2, 1],
-        #     ch=48,
-        #     ch_k=48,
-        #     ch_v=48,
-        #     br=3
-        # )
+        self.Global = global_module(
+            in_channels=downsample_channels,
+            max_pool_kernels=[4, 2, 1],
+            ch=48,
+            ch_k=48,
+            ch_v=48,
+            br=3
+        )
 
         self.up2 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
         self.up_conv2 = basic_module(in_channel=downsample_channels[2] + skip_channels[1],
@@ -96,8 +96,7 @@ class PMFSNet(nn.Module):
         x2, x2_skip = self.down_convs[1](x1)
         x3 = self.down_convs[2](x2)
 
-        # d3 = self.Global([x1, x2, x3])
-        d3 = x3
+        d3 = self.Global([x1, x2, x3])
 
         # decoding + concat
         d2 = self.up2(d3)
