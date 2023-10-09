@@ -37,7 +37,7 @@ params = {
 
     "cuda": True,  # 是否使用GPU
 
-    "benchmark": True,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
+    "benchmark": False,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
 
     "deterministic": True,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
 
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     # 设置可用GPU
     os.environ["CUDA_VISIBLE_DEVICES"] = params["CUDA_VISIBLE_DEVICES"]
     # 随机种子、卷积算法优化
-    utils.reproducibility(params["seed"], params["cuda"], params["deterministic"], params["benchmark"])
+    utils.reproducibility(params["seed"], params["deterministic"], params["benchmark"])
 
     # 获取GPU设备
     if params["cuda"]:
