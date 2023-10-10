@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 
 from lib.models.modules.UpConv import UpConv
-from lib.models.modules.ConvBlock import ConvBlock
+from lib.models.modules.ConvBlock import ConvBlock, DepthWiseSeparateConvBlock
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMFSBlock import DownSampleWithLocalPMFSBlock
@@ -59,7 +59,7 @@ class PMFSNet(nn.Module):
             br=3
         )
 
-        self.bottle_conv = ConvBlock(
+        self.bottle_conv = DepthWiseSeparateConvBlock(
             in_channel=downsample_channels[2] + skip_channels[2],
             out_channel=skip_channels[2],
             kernel_size=3,
@@ -80,7 +80,7 @@ class PMFSNet(nn.Module):
         self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
         self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='trilinear')
 
-        self.out_conv = ConvBlock(
+        self.out_conv = DepthWiseSeparateConvBlock(
             in_channel=sum(skip_channels),
             out_channel=out_channels,
             kernel_size=3,
