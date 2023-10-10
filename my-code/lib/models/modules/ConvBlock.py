@@ -65,6 +65,7 @@ class ConvBlock(torch.nn.Module):
 
 
 class SingleConvBlock(nn.Module):
+
     def __init__(self, in_channel, out_channel, kernel_size, stride):
         super(SingleConvBlock, self).__init__()
 
@@ -80,24 +81,74 @@ class SingleConvBlock(nn.Module):
 
 
 class DepthWiseSeparateConvBlock(nn.Module):
-    def __init__(self, in_channel, out_channel, stride):
+    def __init__(
+        self,
+        in_channel,
+        out_channel,
+        kernel_size,
+        stride=1,
+        batch_norm=True,
+        preactivation=False,
+    ):
         super(DepthWiseSeparateConvBlock, self).__init__()
 
-        self.conv = nn.Sequential(
-            nn.Conv3d(in_channel, in_channel, 3, stride, 1, groups=in_channel, bias=False),
-            nn.BatchNorm3d(in_channel),
-            nn.ReLU(inplace=True),
+        padding = kernel_size - stride
+        if padding % 2 != 0:
+            pad = torch.nn.ConstantPad3d(
+                tuple([padding % 2, padding - padding % 2] * 3), 0
+            )
+        else:
+            pad = torch.nn.ConstantPad3d(padding // 2, 0)
 
-            nn.Conv3d(in_channel, out_channel, 1, 1, 0, bias=False),
-            nn.BatchNorm3d(out_channel),
-            nn.ReLU(inplace=True)
-        )
+        if preactivation:
+            layers = [
+                torch.nn.ReLU(),
+                pad,
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=in_channel,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                    groups=in_channel,
+                    bias=False
+                ),
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=out_channel,
+                    kernel_size=1,
+                    stride=1,
+                    bias=True
+                )
+            ]
+            if batch_norm:
+                layers = [torch.nn.BatchNorm3d(in_channel)] + layers
+        else:
+            layers = [
+                pad,
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=in_channel,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                    groups=in_channel,
+                    bias=False
+                ),
+                torch.nn.Conv3d(
+                    in_channels=in_channel,
+                    out_channels=out_channel,
+                    kernel_size=1,
+                    stride=1,
+                    bias=False
+                )
+            ]
+            if batch_norm:
+                layers.append(torch.nn.BatchNorm3d(out_channel))
+            layers.append(torch.nn.ReLU())
+
+        self.conv = torch.nn.Sequential(*layers)
 
     def forward(self, x):
         return self.conv(x)
-
-
-
 
 
 
