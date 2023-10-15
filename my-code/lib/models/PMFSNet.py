@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 
 from lib.models.modules.UpConv import UpConv
-from lib.models.modules.ConvBlock import ConvBlock
+from lib.models.modules.ConvBlock import ConvBlock, DepthWiseSeparateConvBlock
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMFSBlock import DownSampleWithLocalPMFSBlock
@@ -78,7 +78,7 @@ class PMFSNet(nn.Module):
                                      downsample=False,
                                      skip=False)
 
-        self.out_conv = ConvBlock(
+        self.out_conv = DepthWiseSeparateConvBlock(
             in_channel=downsample_channels[0],
             out_channel=out_channels,
             kernel_size=3,
