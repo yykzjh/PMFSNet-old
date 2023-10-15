@@ -32,7 +32,7 @@ class PMFSNet(nn.Module):
         kernel_sizes = [5, 3, 3]
         base_channels = [24, 24, 24]
         skip_channels = [12, 24, 24]
-        units = [5, 10, 10]
+        units = [3, 5, 5]
         growth_rates = [4, 8, 16]
         downsample_channels = [base_channels[i] + units[i] * growth_rates[i] for i in range(len(base_channels))]  # [44, 104, 184]
 
