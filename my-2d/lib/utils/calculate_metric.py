@@ -20,7 +20,7 @@ def compute_per_channel_dice(input, target, mode="extension", epsilon=1e-6):
     # 判断预测图和标注图的尺寸是否一致
     assert input.size() == target.size(), "计算dsc时input和target的尺寸不一致!"
 
-    # 都压缩成二维tensor,(C, B * H * W * D)
+    # 都压缩成二维tensor,(C, B * H * W)
     input = flatten(input)
     target = flatten(target)
     target = target.float()
@@ -38,55 +38,19 @@ def compute_per_channel_dice(input, target, mode="extension", epsilon=1e-6):
     return (2 * intersect + epsilon) / (denominator + epsilon)
 
 
-def compute_per_channel_iou(seg, target, num_classes):
-    """
-        计算各类别的sd
-
-        :param seg: 分割后的分割图
-        :param target: 真实标签图
-        :param num_classes: 通道和类别数
-        :return:
-        """
-    # 获取各维度大小
-    bs, _, h, w, d = seg.shape
-    # 初始化输出
-    output = torch.full((bs, num_classes), -1.0)
-
-    # 计算IoU
-    for b in range(bs):  # 遍历batch
-        # 遍历各类别
-        for cla in range(num_classes):
-            # 计算两个元素都为1
-            intersection = np.logical_and(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy())
-            # 计算只要有一个元素为1
-            union = np.logical_or(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy())
-            iou_score = np.sum(intersection) / np.sum(union)
-            output[b, cla] = iou_score
-    # 计算各类别在batch上的平均IoU
-    out = torch.full((num_classes,), -1.0)
-    for cla in range(num_classes):
-        cnt = 0
-        acc_sum = 0
-        for b in range(bs):
-            if output[b, cla] != -1.0:
-                acc_sum += output[b, cla]
-                cnt += 1.0
-        out[cla] = acc_sum / cnt
-    return out
-
 
 def flatten(tensor):
     """Flattens a given tensor such that the channel axis is first.
     The shapes are transformed as follows:
-       (N, C, H, W, D) -> (C, N * H * W * D)
+       (N, C, H, W) -> (C, N * H * W)
     """
     # number of channels
     C = tensor.size(1)
     # new axis order
     axis_order = (1, 0) + tuple(range(2, tensor.dim()))
-    # Transpose: (N, C, D, H, W) -> (C, N, D, H, W)
+    # Transpose: (N, C, H, W) -> (C, N, H, W)
     transposed = tensor.permute(axis_order)
-    # Flatten: (C, N, D, H, W) -> (C, N * D * H * W)
+    # Flatten: (C, N, H, W) -> (C, N * H * W)
     return transposed.contiguous().view(C, -1)
 
 

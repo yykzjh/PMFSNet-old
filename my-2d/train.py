@@ -63,7 +63,7 @@ params = {
 
     "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
-    "batch_size": 128,  # batch_size大小
+    "batch_size": 16,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -120,7 +120,7 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
-    "metric_names": ["DSC", "IoU", "mIoU"],  # 评价指标，可选["DSC", "IoU", "mIoU"]
+    "metric_names": ["DSC", "IoU"],  # 评价指标，可选["DSC", "IoU"]
 
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
@@ -137,14 +137,12 @@ params = {
 
     "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
-    "use_amp": False,  # 是否使用自动混合精度
-
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
     "end_epoch": 20000,  # 训练时的结束epoch
 
-    "best_dice": 0.60,  # 保存检查点的初始条件
+    "best_metric": 0.60,  # 保存检查点的初始条件
 
     "terminal_show_freq": 2,  # 终端打印统计信息的频率,以step为单位
 
@@ -182,23 +180,23 @@ if __name__ == '__main__':
     model, optimizer, lr_scheduler = models.get_model_optimizer_lr_scheduler(params)
     print("完成初始化模型:{}、优化器:{}和学习率调整器:{}".format(params["model_name"], params["optimizer_name"], params["lr_scheduler_name"]))
 
-    # # 初始化损失函数
-    # loss_function = losses.get_loss_function(params)
-    # print("完成初始化损失函数")
-    #
-    # # 初始化各评价指标
-    # metric = metrics.get_metric(params)
-    # print("完成初始化评价指标")
-    #
-    # # 初始化训练器
-    # trainer = trainers.Trainer(params, train_loader, valid_loader, model, optimizer, lr_scheduler, loss_function, metric)
-    #
-    # # 如果需要继续训练或者加载预训练权重
-    # if (params["resume"] is not None) or (params["pretrain"] is not None):
-    #     trainer.load()
-    #
-    # # 开始训练
-    # trainer.training()
+    # 初始化损失函数
+    loss_function = losses.get_loss_function(params)
+    print("完成初始化损失函数")
+
+    # 初始化各评价指标
+    metric = metrics.get_metric(params)
+    print("完成初始化评价指标")
+
+    # 初始化训练器
+    trainer = trainers.Trainer(params, train_loader, valid_loader, model, optimizer, lr_scheduler, loss_function, metric)
+
+    # 如果需要继续训练或者加载预训练权重
+    if (params["resume"] is not None) or (params["pretrain"] is not None):
+        trainer.load()
+
+    # 开始训练
+    trainer.training()
 
 
 
