@@ -19,14 +19,14 @@ from lib.models.modules.ConvBlock import ConvBlock
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMFSBlock import DownSampleWithLocalPMFSBlock
-from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP, GlobalPMFSBlock_AP_Separate
 
 
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
                  basic_module=DownSampleWithLocalPMFSBlock,
-                 global_module=GlobalPMFSBlock_AP):
+                 global_module=GlobalPMFSBlock_AP_Separate):
         super(PMFSNet, self).__init__()
 
         kernel_sizes = [5, 3, 3]
