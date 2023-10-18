@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -63,7 +63,7 @@ params = {
 
     "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
-    "batch_size": 16,  # batch_size大小
+    "batch_size": 32,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -142,9 +142,9 @@ params = {
     "start_epoch": 0,  # 训练时的起始epoch
     "end_epoch": 20000,  # 训练时的结束epoch
 
-    "best_metric": 0.60,  # 保存检查点的初始条件
+    "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 2,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
 
     "save_epoch_freq": 2000,  # 每多少个epoch保存一次训练状态和模型参数
 }
