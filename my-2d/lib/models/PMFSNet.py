@@ -64,8 +64,8 @@ class PMFSNet(nn.Module):
             preactivation=True,
         )
 
-        self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
-        self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='trilinear')
+        self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='bilinear')
 
         self.out_conv = ConvBlock(
             in_channel=sum(skip_channels),
@@ -75,7 +75,7 @@ class PMFSNet(nn.Module):
             batch_norm=True,
             preactivation=True,
         )
-        self.upsample_out = torch.nn.Upsample(scale_factor=2, mode='trilinear')
+        self.upsample_out = torch.nn.Upsample(scale_factor=2, mode='bilinear')
 
     def forward(self, x):
         # encoding
