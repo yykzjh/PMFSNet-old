@@ -9,6 +9,7 @@
 from __future__ import division
 import torch
 import math
+import cv2
 import random
 import numpy as np
 import numbers
@@ -16,9 +17,9 @@ import collections
 import warnings
 import PIL
 
-from torchtoolbox.transform import functional as F
 
-
+INTER_MODE = {'NEAREST': cv2.INTER_NEAREST, 'BILINEAR': cv2.INTER_LINEAR, 'BICUBIC': cv2.INTER_CUBIC}
+Iterable = collections.abc.Iterable
 
 
 class RandomResizedCrop(object):
@@ -96,7 +97,7 @@ class RandomResizedCrop(object):
         :return: CV Image: Randomly cropped and resized image.
         """
         i, j, h, w = self.get_params(image, self.scale, self.ratio)
-        return F.resized_crop(image, i, j, h, w, self.size, self.interpolation), F.resized_crop(label, i, j, h, w, self.size, "NEAREST")
+        return resized_crop(image, i, j, h, w, self.size, self.interpolation), resized_crop(label, i, j, h, w, self.size, "NEAREST")
 
     def __repr__(self):
         interpolate_str = self.interpolation
@@ -105,3 +106,89 @@ class RandomResizedCrop(object):
         format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
         format_string += ', interpolation={0})'.format(interpolate_str)
         return format_string
+
+
+def _is_numpy_image(img):
+    return img.ndim in {2, 3}
+
+
+def crop(img, i, j, h, w):
+    """Crop the given CV Image.
+
+    Args:
+        img (PIL Image): Image to be cropped.
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
+
+    Returns:
+        PIL Image: Cropped image.
+    """
+    if not _is_numpy_image(img):
+        raise TypeError('img should be CV Image. Got {}'.format(type(img)))
+
+    return img[i:i + h, j:j + w, ...].copy()
+
+
+def resize(img, size, interpolation='BILINEAR'):
+    r"""Resize the input CV Image to the given size.
+
+    Args:
+        img (CV Image): Image to be resized.
+        size (sequence or int): Desired output size. If size is a sequence like
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaing
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
+        interpolation (int, optional): Desired interpolation. Default is
+            ``BILINEAR``
+
+    Returns:
+        PIL Image: Resized image.
+    """
+    if not _is_numpy_image(img):
+        raise TypeError('img should be CV Image. Got {}'.format(type(img)))
+    if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
+        raise TypeError('Got inappropriate size arg: {}'.format(size))
+
+    interpolation = INTER_MODE[interpolation]
+    if isinstance(size, int):
+        h, w, _ = img.shape
+        if (w <= h and w == size) or (h <= w and h == size):
+            return img
+        if w < h:
+            ow = size
+            oh = int(size * h / w)
+        else:
+            oh = size
+            ow = int(size * w / h)
+    else:
+        oh, ow = map(int, size)
+    return cv2.resize(img, (ow, oh), interpolation=interpolation)
+
+
+def resized_crop(img, i, j, h, w, size, interpolation='BILINEAR'):
+    """Crop the given CV Image and resize it to desired size.
+
+    Args:
+        img (CV Image): Image to be cropped.
+        i (int): i in (i,j) i.e coordinates of the upper left corner
+        j (int): j in (i,j) i.e coordinates of the upper left corner
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
+        size (sequence or int): Desired output size. Same semantics as ``resize``.
+        interpolation (int, optional): Desired interpolation. Default is
+            ``BILINEAR``.
+    Returns:
+        CV Image: Cropped image.
+    """
+    assert _is_numpy_image(img), 'img should be CV Image'
+    tmp_shape = img.shape
+    img = crop(img, i, j, h, w)
+    if img.shape[0] == 0:
+        print(i, j, h, w, tmp_shape)
+    img = resize(img, size, interpolation)
+    return img
+
+
