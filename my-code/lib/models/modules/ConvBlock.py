@@ -11,6 +11,24 @@ import torch.nn as nn
 
 
 
+class AttentionUNetConvBlock(nn.Module):
+    def __init__(self, ch_in, ch_out):
+        super(AttentionUNetConvBlock, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv3d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm3d(ch_out),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(ch_out, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm3d(ch_out),
+            nn.ReLU(inplace=True)
+        )
+
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
+
 class ConvBlock(torch.nn.Module):
     def __init__(
         self,
