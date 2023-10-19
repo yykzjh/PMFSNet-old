@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -63,7 +63,7 @@ params = {
 
     "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
-    "batch_size": 4,  # batch_size大小
+    "batch_size": 32,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
