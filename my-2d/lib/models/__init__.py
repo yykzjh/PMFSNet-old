@@ -37,6 +37,9 @@ def get_model_optimizer_lr_scheduler(opt):
     elif opt["optimizer_name"] == "Adam":
         optimizer = optim.Adam(model.parameters(), lr=opt["learning_rate"], weight_decay=opt["weight_decay"])
 
+    elif opt["optimizer_name"] == "AdamW":
+        optimizer = optim.AdamW(model.parameters(), lr=opt["learning_rate"], weight_decay=opt["weight_decay"])
+
     elif opt["optimizer_name"] == "Adamax":
         optimizer = optim.Adamax(model.parameters(), lr=opt["learning_rate"], weight_decay=opt["weight_decay"])
 

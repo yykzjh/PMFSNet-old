@@ -87,7 +87,7 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
+    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
     "learning_rate": 0.001,  # 学习率
 
@@ -135,12 +135,12 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 20000,  # 训练时的结束epoch
+    "end_epoch": 180,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
@@ -156,6 +156,7 @@ if __name__ == '__main__':
     if params["optimize_params"]:
         # 获得下一组搜索空间中的参数
         tuner_params = nni.get_next_parameter()
+        tuner_params["class_weight"] = [tuner_params["class_weight"], 1 - tuner_params["class_weight"]]
         # 更新参数
         params.update(tuner_params)
 
