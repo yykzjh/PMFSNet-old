@@ -59,7 +59,7 @@ class PMFSNet(nn.Module):
             br=3
         )
 
-        self.bottle_conv = DepthWiseSeparateConvBlock(
+        self.bottle_conv = ConvBlock(
             in_channel=downsample_channels[2] + skip_channels[2],
             out_channel=skip_channels[2],
             kernel_size=3,
@@ -80,7 +80,7 @@ class PMFSNet(nn.Module):
         self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
         self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='trilinear')
 
-        self.out_conv = DepthWiseSeparateConvBlock(
+        self.out_conv = ConvBlock(
             in_channel=sum(skip_channels),
             out_channel=out_channels,
             kernel_size=3,

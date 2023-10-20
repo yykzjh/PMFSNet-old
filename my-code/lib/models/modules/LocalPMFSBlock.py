@@ -554,7 +554,7 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
         super(DownSampleWithLocalPMFSBlock, self).__init__()
         self.skip = skip
 
-        self.downsample = DepthWiseSeparateConvBlock(
+        self.downsample = ConvBlock(
             in_channel=in_channel,
             out_channel=base_channel,
             kernel_size=kernel_size,
@@ -571,7 +571,7 @@ class DownSampleWithLocalPMFSBlock(nn.Module):
         )
 
         if skip:
-            self.skip_conv = DepthWiseSeparateConvBlock(
+            self.skip_conv = ConvBlock(
                 in_channel=base_channel + unit * growth_rate,
                 out_channel=skip_channel,
                 kernel_size=3,
