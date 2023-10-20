@@ -116,9 +116,10 @@ class Trainer:
             # 将在验证集上最优的mIoU作为最终上报指标
             nni.report_final_result(self.best_metric)
 
-        # 关闭tensorboard
-        time.sleep(60)
-        self.writer.close()
+        if not self.opt["optimize_params"]:
+            # 关闭tensorboard
+            time.sleep(60)
+            self.writer.close()
 
 
     def train_epoch(self, epoch):
