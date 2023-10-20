@@ -125,7 +125,7 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "Adamax", "Adadelta"]
+    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
     "learning_rate": 0.0005,  # 学习率
 
