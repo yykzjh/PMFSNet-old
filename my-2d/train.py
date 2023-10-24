@@ -43,25 +43,16 @@ params = {
 
     # —————————————————————————————————————————————     预处理       ————————————————————————————————————————————————————
 
-    "resize_shape": (384, 384),  # 图像resize大小
+    "resize_shape": 224,  # 图像resize大小
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.3,  # 每张图像做数据增强的概率
-
-    "color_jitter": 0.3,  # 亮度、对比度、饱和度变化率范围
-
-    "random_rotation_angle": 45,  # 随机旋转角度范围
-
-    # 标准化均值
-    "normalize_means": (0.22250386, 0.21844882, 0.21521868),
-    "normalize_stds": (0.21923075, 0.21622984, 0.21370508),
 
     # —————————————————————————————————————————————    数据读取     ——————————————————————————————————————————————————————
 
-    "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU"]
+    "dataset_name": "ILSVRC2012",  # 数据集名称， 可选["NCTooth", "MMOTU", "ILSVRC2012"]
 
-    "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
+    "dataset_path": r"/data01/zjh/dataset/ILSVRC2012",  # 数据集路径
 
     "batch_size": 32,  # batch_size大小
 
@@ -73,13 +64,7 @@ params = {
 
     "in_channels": 3,  # 模型最开始输入的通道数,即模态数
 
-    "classes": 2,  # 模型最后输出的通道数,即类别总数
-
-    "index_to_class_dict":  # 类别索引映射到类别名称的字典
-    {
-        0: "background",
-        1: "foreground"
-    },
+    "classes": 1000,  # 模型最后输出的通道数,即类别总数
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
@@ -91,7 +76,7 @@ params = {
 
     "learning_rate": 0.001,  # 学习率
 
-    "weight_decay": 0.0001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.00001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
@@ -120,33 +105,23 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
-    "metric_names": ["DSC", "IoU"],  # 评价指标，可选["DSC", "IoU"]
-
-    "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
+    "loss_function_name": "CrossEntropyLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
-
-    "class_weight": [0.13897086374186637, 0.8610291362581336],  # 各类别计算损失值的加权权重
-
-    "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
-
-    "dice_loss_mode": "extension",  # Dice Loss的计算方式，"standard":标准计算方式；"extension":扩展计算方式
-
-    "dice_mode": "standard",  # DSC的计算方式，"standard":标准计算方式；"extension":扩展计算方式
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 180,  # 训练时的结束epoch
+    "end_epoch": 2000,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 8000,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 2000,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 500,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
@@ -185,12 +160,8 @@ if __name__ == '__main__':
     loss_function = losses.get_loss_function(params)
     print("完成初始化损失函数")
 
-    # 初始化各评价指标
-    metric = metrics.get_metric(params)
-    print("完成初始化评价指标")
-
     # 初始化训练器
-    trainer = trainers.Trainer(params, train_loader, valid_loader, model, optimizer, lr_scheduler, loss_function, metric)
+    trainer = trainers.Trainer(params, train_loader, valid_loader, model, optimizer, lr_scheduler, loss_function)
 
     # 如果需要继续训练或者加载预训练权重
     if (params["resume"] is not None) or (params["pretrain"] is not None):

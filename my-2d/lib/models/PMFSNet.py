@@ -64,20 +64,15 @@ class PMFSNet(nn.Module):
             preactivation=True,
         )
 
-        self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='bilinear')
-        self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='bilinear')
+        self.upsample_1 = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample_2 = nn.Upsample(scale_factor=4, mode='bilinear')
 
-        self.out_conv = ConvBlock(
-            in_channel=sum(skip_channels),
-            out_channel=out_channels,
-            kernel_size=3,
-            stride=1,
-            batch_norm=True,
-            preactivation=True,
-        )
-        self.upsample_out = torch.nn.Upsample(scale_factor=2, mode='bilinear')
+        self.max_pool = nn.AdaptiveMaxPool2d(7)
+
+        self.out_linear = nn.Linear(sum(skip_channels) * 7 * 7, out_channels)
 
     def forward(self, x):
+        b, _, _, _ = x.size()
         # encoding
         x1, skip1 = self.down_convs[0](x)
         x2, skip2 = self.down_convs[1](x1)
@@ -89,8 +84,8 @@ class PMFSNet(nn.Module):
         skip2 = self.upsample_1(skip2)
         skip3 = self.upsample_2(skip3)
 
-        out = self.out_conv(torch.cat([skip1, skip2, skip3], dim=1))
-        out = self.upsample_out(out)
+        out = self.max_pool(torch.cat([skip1, skip2, skip3], dim=1)).view(b, -1)
+        out = self.out_linear(out)
 
         return out
 
