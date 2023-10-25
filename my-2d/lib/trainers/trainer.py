@@ -295,7 +295,7 @@ class Trainer:
             # 严格加载模型参数
             self.model.load_state_dict(model_state_dict, strict=True)
             # 输出权重参数加载率
-            print("{.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
+            print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
         else:  # 如果不需要继续训练
             # 有可能需要加载模型的预训练参数
             if self.opt["pretrain"] is not None:
@@ -313,7 +313,7 @@ class Trainer:
                 # 严格加载模型参数
                 self.model.load_state_dict(model_state_dict, strict=True)
                 # 输出权重参数加载率
-                print("{.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
+                print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
 
 
 
