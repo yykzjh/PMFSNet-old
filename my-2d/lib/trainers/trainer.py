@@ -418,16 +418,38 @@ class Trainer:
             self.lr_scheduler.load_state_dict(resume_state_dict["lr_scheduler"])
 
             # 加载模型参数字典
-            model_state_dict = torch.load(self.opt["pretrain"], map_location=lambda storage, loc: storage.cuda(self.device))
+            pretrain_state_dict = torch.load(self.opt["pretrain"], map_location=lambda storage, loc: storage.cuda(self.device))
+            # 获取模型参数字典
+            model_state_dict = self.model.state_dict()
+            # 遍历模型参数
+            load_count = 0  # 成功加载参数计数
+            for param_name in model_state_dict.keys():
+                # 判断当前模型参数是否在预训练参数中
+                if param_name in pretrain_state_dict:
+                    model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
+                    load_count += 1
             # 严格加载模型参数
             self.model.load_state_dict(model_state_dict, strict=True)
+            # 输出权重参数加载率
+            print("{.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
         else:  # 如果不需要继续训练
             # 有可能需要加载模型的预训练参数
             if self.opt["pretrain"] is not None:
                 # 加载模型参数字典
-                model_state_dict = torch.load(self.opt["pretrain"], map_location=lambda storage, loc: storage.cuda(self.device))
+                pretrain_state_dict = torch.load(self.opt["pretrain"], map_location=lambda storage, loc: storage.cuda(self.device))
+                # 获取模型参数字典
+                model_state_dict = self.model.state_dict()
+                # 遍历模型参数
+                load_count = 0  # 成功加载参数计数
+                for param_name in model_state_dict.keys():
+                    # 判断当前模型参数是否在预训练参数中
+                    if param_name in pretrain_state_dict:
+                        model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
+                        load_count += 1
                 # 严格加载模型参数
                 self.model.load_state_dict(model_state_dict, strict=True)
+                # 输出权重参数加载率
+                print("{.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
 
 
 
