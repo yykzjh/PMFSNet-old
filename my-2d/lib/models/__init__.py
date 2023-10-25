@@ -13,7 +13,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
-        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
+        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
