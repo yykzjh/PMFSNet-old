@@ -4,12 +4,16 @@ import torch.optim as optim
 import lib.utils as utils
 
 from .PMFSNet import PMFSNet
+from .MobileNetV2 import MobileNetV2
 
 
 def get_model_optimizer_lr_scheduler(opt):
     # 初始化网络模型
     if opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "MobileNetV2":
+        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
@@ -86,6 +90,9 @@ def get_model(opt):
     # 初始化网络模型
     if opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
+
+    elif opt["model_name"] == "MobileNetV2":
+        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
