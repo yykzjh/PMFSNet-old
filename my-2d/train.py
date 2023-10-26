@@ -69,7 +69,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称["PMRFNet", "MobileNetV2"]
+    "model_name": "MobileNetV2",  # 模型名称["PMRFNet", "MobileNetV2"]
 
     "in_channels": 3,  # 模型最开始输入的通道数,即模态数
 
@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": None,  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/mobilenet_v2.pth.tar",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -104,7 +104,7 @@ params = {
 
     "step_size": 9,  # StepLR的学习率衰减步长
 
-    "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
+    "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
     "T_max": 2,  # CosineAnnealingLR的半周期
 
@@ -146,7 +146,7 @@ params = {
 
     "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 2000,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
