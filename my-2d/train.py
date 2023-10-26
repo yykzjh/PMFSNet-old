@@ -37,9 +37,9 @@ params = {
 
     "cuda": True,  # 是否使用GPU
 
-    "benchmark": False,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
+    "benchmark": True,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
 
-    "deterministic": True,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
+    "deterministic": False,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
 
     # —————————————————————————————————————————————     预处理       ————————————————————————————————————————————————————
 
@@ -52,9 +52,9 @@ params = {
 
     "dataset_name": "ILSVRC2012",  # 数据集名称， 可选["NCTooth", "MMOTU", "ILSVRC2012"]
 
-    "dataset_path": r"/data01/zjh/dataset/ILSVRC2012",  # 数据集路径
+    "dataset_path": r"/home/oj/distributed_floder/datasets/Imagenet2012/",  # 数据集路径
 
-    "batch_size": 32,  # batch_size大小
+    "batch_size": 256,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -72,17 +72,17 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
+    "optimizer_name": "Adamax",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.001,  # 学习率
+    "learning_rate": 0.01,  # 学习率
 
-    "weight_decay": 0.00001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.00005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingWarmRestarts",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
     "gamma": 0.1,  # 学习率衰减系数
@@ -93,9 +93,9 @@ params = {
 
     "T_max": 2,  # CosineAnnealingLR的半周期
 
-    "T_0": 2,  # CosineAnnealingWarmRestarts的周期
+    "T_0": 10,  # CosineAnnealingWarmRestarts的周期
 
-    "T_mult": 2,  # CosineAnnealingWarmRestarts的周期放大倍数
+    "T_mult": 4,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
@@ -115,13 +115,13 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 2000,  # 训练时的结束epoch
+    "end_epoch": 150,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 8000,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 1000,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 500,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
