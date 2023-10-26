@@ -1,6 +1,7 @@
 import os
 import time
 import numpy as np
+import datetime
 
 import nni
 import torch
@@ -83,8 +84,9 @@ class Trainer:
                 self.lr_scheduler.step()
 
             # epoch结束总的输出一下结果
-            print("epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
-                  .format(epoch, self.end_epoch - 1,
+            print("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
+                  .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                          epoch, self.end_epoch - 1,
                           self.optimizer.param_groups[0]['lr'],
                           self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                           self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
@@ -95,8 +97,9 @@ class Trainer:
                           valid_mIoU,
                           self.best_metric))
             if not self.opt["optimize_params"]:
-                utils.pre_write_txt("epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
-                                    .format(epoch, self.end_epoch - 1,
+                utils.pre_write_txt("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
+                                    .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            epoch, self.end_epoch - 1,
                                             self.optimizer.param_groups[0]['lr'],
                                             self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
                                             self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
@@ -157,8 +160,9 @@ class Trainer:
                 train_class_IoU = np.nan_to_num(train_class_IoU)
                 train_mIoU = np.mean(train_class_IoU)
                 # 打印
-                print("epoch:[{:05d}/{:05d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}  IoU:{:.6f}  mIoU:{:.6f}"
-                      .format(epoch, self.end_epoch-1,
+                print("[{}]  epoch:[{:05d}/{:05d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}  IoU:{:.6f}  mIoU:{:.6f}"
+                      .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                              epoch, self.end_epoch-1,
                               batch_idx+1, len(self.train_data_loader),
                               self.optimizer.param_groups[0]['lr'],
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
@@ -166,8 +170,9 @@ class Trainer:
                               train_class_IoU[1],
                               train_mIoU))
                 if not self.opt["optimize_params"]:
-                    utils.pre_write_txt("epoch:[{:05d}/{:05d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}  IoU:{:.6f}  mIoU:{:.6f}"
-                                        .format(epoch, self.end_epoch-1,
+                    utils.pre_write_txt("[{}]  epoch:[{:05d}/{:05d}]  step:[{:04d}/{:04d}]  lr:{:.6f}  loss:{:.6f}  dsc:{:.6f}  IoU:{:.6f}  mIoU:{:.6f}"
+                                        .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                epoch, self.end_epoch-1,
                                                 batch_idx+1, len(self.train_data_loader),
                                                 self.optimizer.param_groups[0]['lr'],
                                                 self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
