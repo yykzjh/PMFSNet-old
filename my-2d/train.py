@@ -63,7 +63,7 @@ params = {
 
     "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
-    "batch_size": 32,  # batch_size大小
+    "batch_size": 16,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -144,7 +144,7 @@ params = {
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 16,  # 终端打印统计信息的频率,以step为单位
 
     "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
 }
