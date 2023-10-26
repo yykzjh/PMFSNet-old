@@ -61,7 +61,7 @@ params = {
 
     "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU"]
 
-    "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
+    "dataset_path": r"../../PMFS-Net/my-2d/datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
     "batch_size": 16,  # batch_size大小
 
@@ -140,7 +140,7 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 180,  # 训练时的结束epoch
+    "end_epoch": 120,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
