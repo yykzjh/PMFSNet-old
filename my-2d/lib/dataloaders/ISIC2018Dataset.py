@@ -58,11 +58,11 @@ class ISIC2018Dataset(Dataset):
 
         # 获取并存储数据集所有图像路径
         if mode == "train":
-            self.images_list = sorted(glob.glob(os.path.join(self.train_dir, "images", "*.JPG")))
-            self.labels_list = sorted(glob.glob(os.path.join(self.train_dir, "labels", "*.PNG")))
+            self.images_list = sorted(glob.glob(os.path.join(self.train_dir, "images", "*.jpg")))
+            self.labels_list = sorted(glob.glob(os.path.join(self.train_dir, "annotations", "*.png")))
         else:
-            self.images_list = sorted(glob.glob(os.path.join(self.valid_dir, "images", "*.JPG")))
-            self.labels_list = sorted(glob.glob(os.path.join(self.valid_dir, "labels", "*.PNG")))
+            self.images_list = sorted(glob.glob(os.path.join(self.valid_dir, "images", "*.jpg")))
+            self.labels_list = sorted(glob.glob(os.path.join(self.valid_dir, "annotations", "*.png")))
 
     def __len__(self):
         return len(self.images_list)
