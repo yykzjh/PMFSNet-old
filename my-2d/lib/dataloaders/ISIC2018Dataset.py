@@ -71,6 +71,7 @@ class ISIC2018Dataset(Dataset):
         # 读取图像
         image = cv2.imread(self.images_list[index], -1)
         label = cv2.imread(self.labels_list[index], -1)
+        label[label == 255] = 1
         # 数据预处理和数据增强
         image, label = self.transforms_dict[self.mode](image, label)
 
