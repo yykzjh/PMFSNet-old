@@ -59,7 +59,7 @@ params = {
 
     # —————————————————————————————————————————————    数据读取     ——————————————————————————————————————————————————————
 
-    "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU"]
+    "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
 
     "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
