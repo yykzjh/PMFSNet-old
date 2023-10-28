@@ -59,9 +59,9 @@ params = {
 
     # —————————————————————————————————————————————    数据读取     ——————————————————————————————————————————————————————
 
-    "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
+    "dataset_name": "ISIC2018",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
 
-    "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
+    "dataset_path": r"./datasets/ISIC2018",  # 数据集路径
 
     "batch_size": 32,  # batch_size大小
 
@@ -89,15 +89,15 @@ params = {
 
     "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.001,  # 学习率
+    "learning_rate": 0.0005,  # 学习率
 
-    "weight_decay": 0.0001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
     "gamma": 0.1,  # 学习率衰减系数
@@ -106,7 +106,7 @@ params = {
 
     "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 2,  # CosineAnnealingLR的半周期
+    "T_max": 30,  # CosineAnnealingLR的半周期
 
     "T_0": 2,  # CosineAnnealingWarmRestarts的周期
 
@@ -140,13 +140,13 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 180,  # 训练时的结束epoch
+    "end_epoch": 120,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 20,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 2000,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
