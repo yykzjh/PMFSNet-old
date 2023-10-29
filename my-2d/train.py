@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -72,11 +72,11 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adamax",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
+    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.01,  # 学习率
+    "learning_rate": 0.0005,  # 学习率
 
-    "weight_decay": 0.00005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
@@ -91,11 +91,11 @@ params = {
 
     "milestones": [1, 3, 5, 7, 8, 9],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 2,  # CosineAnnealingLR的半周期
+    "T_max": 10,  # CosineAnnealingLR的半周期
 
     "T_0": 10,  # CosineAnnealingWarmRestarts的周期
 
-    "T_mult": 4,  # CosineAnnealingWarmRestarts的周期放大倍数
+    "T_mult": 2,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
