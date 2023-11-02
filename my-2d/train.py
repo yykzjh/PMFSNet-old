@@ -37,7 +37,7 @@ params = {
 
     "cuda": True,  # 是否使用GPU
 
-    "benchmark": True,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
+    "benchmark": False,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
 
     "deterministic": True,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
 
@@ -47,11 +47,11 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.3,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.12,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.3,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.14,  # 亮度、对比度、饱和度变化率范围
 
-    "random_rotation_angle": 45,  # 随机旋转角度范围
+    "random_rotation_angle": 15,  # 随机旋转角度范围
 
     # 标准化均值
     "normalize_means": (0.22250386, 0.21844882, 0.21521868),
@@ -61,9 +61,9 @@ params = {
 
     "dataset_name": "MMOTU",  # 数据集名称， 可选["NCTooth", "MMOTU"]
 
-    "dataset_path": r"../../PMFS-Net/my-2d/datasets/MMOTU/OTU_2d_processed",  # 数据集路径
+    "dataset_path": r"./datasets/MMOTU/OTU_2d_processed",  # 数据集路径
 
-    "batch_size": 16,  # batch_size大小
+    "batch_size": 32,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -89,15 +89,15 @@ params = {
 
     "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.001,  # 学习率
+    "learning_rate": 0.0005,  # 学习率
 
-    "weight_decay": 0.0001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
     "gamma": 0.1,  # 学习率衰减系数
@@ -106,7 +106,7 @@ params = {
 
     "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 2,  # CosineAnnealingLR的半周期
+    "T_max": 30,  # CosineAnnealingLR的半周期
 
     "T_0": 2,  # CosineAnnealingWarmRestarts的周期
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.13897086374186637, 0.8610291362581336],  # 各类别计算损失值的加权权重
+    "class_weight": [0.12, 0.88],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
@@ -135,16 +135,16 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 120,  # 训练时的结束epoch
+    "end_epoch": 2000,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 16,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
 
     "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
 }
