@@ -69,7 +69,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称["PMRFNet", "MobileNetV2"]
+    "model_name": "PMRFNet",  # 模型名称["PMRFNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet"]
 
     "in_channels": 3,  # 模型最开始输入的通道数,即模态数
 

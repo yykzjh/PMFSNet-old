@@ -5,6 +5,13 @@ import lib.utils as utils
 
 from .PMFSNet import PMFSNet
 from .MobileNetV2 import MobileNetV2
+from .UNet import UNet
+from .MsRED import Ms_red_v1, Ms_red_v2
+from .CKDNet import DeepLab_Aux
+from .BCDUNet import BCDU_net_D3
+from .CANet import Comprehensive_Atten_Unet
+from .CENet import CE_Net
+from .CPFNet import CPF_Net
 
 
 def get_model_optimizer_lr_scheduler(opt):
@@ -14,6 +21,27 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["model_name"] == "MobileNetV2":
         model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
+
+    elif opt["model_name"] == "UNet":
+        model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "MsRED":
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CKDNet":
+        model = DeepLab_Aux(num_classes=opt["classes"])
+
+    elif opt["model_name"] == "BCDUNet":
+        model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CANet":
+        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "CENet":
+        model = CE_Net(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CPFNet":
+        model = CPF_Net(classes=opt["classes"], channels=opt["in_channels"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
@@ -93,6 +121,27 @@ def get_model(opt):
 
     elif opt["model_name"] == "MobileNetV2":
         model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
+
+    elif opt["model_name"] == "UNet":
+        model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "MsRED":
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CKDNet":
+        model = DeepLab_Aux(num_classes=opt["classes"])
+
+    elif opt["model_name"] == "BCDUNet":
+        model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CANet":
+        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "CENet":
+        model = CE_Net(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "CPFNet":
+        model = CPF_Net(classes=opt["classes"], channels=opt["in_channels"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
