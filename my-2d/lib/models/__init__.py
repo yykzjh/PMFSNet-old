@@ -16,7 +16,7 @@ from .CPFNet import CPF_Net
 
 def get_model_optimizer_lr_scheduler(opt):
     # 初始化网络模型
-    if opt["model_name"] == "PMRFNet":
+    if opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
@@ -26,7 +26,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "MsRED":
-        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"])
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CKDNet":
         model = DeepLab_Aux(num_classes=opt["classes"])
@@ -35,7 +35,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
 
     elif opt["model_name"] == "CANet":
-        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"])
+        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CENet":
         model = CE_Net(classes=opt["classes"], channels=opt["in_channels"])
@@ -116,17 +116,17 @@ def get_model_optimizer_lr_scheduler(opt):
 
 def get_model(opt):
     # 初始化网络模型
-    if opt["model_name"] == "PMRFNet":
+    if opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
-        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
+        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
 
     elif opt["model_name"] == "UNet":
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "MsRED":
-        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"])
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CKDNet":
         model = DeepLab_Aux(num_classes=opt["classes"])
@@ -135,7 +135,7 @@ def get_model(opt):
         model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
 
     elif opt["model_name"] == "CANet":
-        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"])
+        model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CENet":
         model = CE_Net(classes=opt["classes"], channels=opt["in_channels"])

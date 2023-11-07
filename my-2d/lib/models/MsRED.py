@@ -9,7 +9,6 @@
 """
 Ms RED network.
 """
-from __future__ import division
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,13 +20,13 @@ from lib.models.modules.nonlocal_layer import NONLocalBlock2D
 
 
 class Ms_red_v1(nn.Module):
-    def __init__(self, classes, channels):
+    def __init__(self, classes, channels, out_size=(224, 224)):
         """
         :param classes: the object classes number.
         :param channels: the channels of the input image.
         """
         super(Ms_red_v1, self).__init__()
-        self.out_size = (224, 320)
+        self.out_size = out_size
         self.enc_input = ResEncoder_hs(channels, 32)
         self.encoder1 = RFB_hs(32, 64)
         self.encoder2 = RFB_hs(64, 128)
