@@ -76,15 +76,17 @@ class Trainer:
             valid_class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
             valid_class_IoU = np.nan_to_num(valid_class_IoU)
             valid_mIoU = np.mean(valid_class_IoU)
+            # 计算验证集上的dsc
+            valid_dsc = self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"]
 
             # 更新学习率
             if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):
-                self.lr_scheduler.step(valid_mIoU)
+                self.lr_scheduler.step(valid_dsc)
             else:
                 self.lr_scheduler.step()
 
             # epoch结束总的输出一下结果
-            print("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
+            print("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_dsc:{:.6f}"
                   .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                           epoch, self.end_epoch - 1,
                           self.optimizer.param_groups[0]['lr'],
@@ -92,12 +94,12 @@ class Trainer:
                           self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
                           train_class_IoU[1],
                           train_mIoU,
-                          self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
+                          valid_dsc,
                           valid_class_IoU[1],
                           valid_mIoU,
                           self.best_metric))
             if not self.opt["optimize_params"]:
-                utils.pre_write_txt("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_mIoU:{:.6f}"
+                utils.pre_write_txt("[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_dsc:{:.6f}  train_IoU:{:.6f}  train_mIoU:{:.6f}  valid_dsc:{:.6f}  valid_IoU:{:.6f}  valid_mIoU:{:.6f}  best_dsc:{:.6f}"
                                     .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                             epoch, self.end_epoch - 1,
                                             self.optimizer.param_groups[0]['lr'],
@@ -105,7 +107,7 @@ class Trainer:
                                             self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
                                             train_class_IoU[1],
                                             train_mIoU,
-                                            self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
+                                            valid_dsc,
                                             valid_class_IoU[1],
                                             valid_mIoU,
                                             self.best_metric), self.log_txt_path)
@@ -113,7 +115,7 @@ class Trainer:
 
             if self.opt["optimize_params"]:
                 # 向nni上报每个epoch验证集的mIoU作为中间指标
-                nni.report_intermediate_result(valid_mIoU)
+                nni.report_intermediate_result(valid_dsc)
 
         if self.opt["optimize_params"]:
             # 将在验证集上最优的mIoU作为最终上报指标
@@ -202,22 +204,20 @@ class Trainer:
                 # 计算各评价指标并更新中间统计信息
                 self.calculate_metric_and_update_statistcs(output.cpu(), target.cpu(), len(target), mode="valid")
 
-            # 计算当前epoch验证集的mIoU
-            class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
-            class_IoU = np.nan_to_num(class_IoU)
-            cur_mIoU = np.mean(class_IoU)
+            # 计算验证集上的dsc
+            cur_dsc = self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"]
 
             # 按照一定周期固定保存模型和训练状态部分
             if (not self.opt["optimize_params"]) and (epoch + 1) % self.save_epoch_freq == 0:
-                self.save(epoch, cur_mIoU, self.best_metric, type="normal")
+                self.save(epoch, cur_dsc, self.best_metric, type="normal")
             if not self.opt["optimize_params"]:
                 # 每次都保存最新的latest
-                self.save(epoch, cur_mIoU, self.best_metric, type="latest")
+                self.save(epoch, cur_dsc, self.best_metric, type="latest")
             # 与最优结果进行比较，保存最优的模型
-            if cur_mIoU > self.best_metric:
-                self.best_metric = cur_mIoU
+            if cur_dsc > self.best_metric:
+                self.best_metric = cur_dsc
                 if not self.opt["optimize_params"]:
-                    self.save(epoch, cur_mIoU, self.best_metric, type="best")
+                    self.save(epoch, cur_dsc, self.best_metric, type="best")
 
 
     def write_statistcs(self, mode="step", iter=None):
