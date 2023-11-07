@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": None,  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/best_PMRFNet.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -146,7 +146,7 @@ params = {
 
     "terminal_show_freq": 20,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
