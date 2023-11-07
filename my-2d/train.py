@@ -69,7 +69,7 @@ params = {
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "MobileNetV2",  # 模型名称["PMRFNet", "MobileNetV2"]
+    "model_name": "PMRFNet",  # 模型名称["PMRFNet", "MobileNetV2"]
 
     "in_channels": 3,  # 模型最开始输入的通道数,即模态数
 
@@ -83,15 +83,15 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": "./pretrain/mobilenet_v2.pth.tar",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/best_PMRFNet.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
     "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.0005,  # 学习率
+    "learning_rate": 0.0001,  # 学习率
 
-    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.000001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
