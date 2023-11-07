@@ -164,6 +164,32 @@ def cal_MMOTU_weights(root_dir):
     print(weights_str + "]")
 
 
+def cal_max_valid_IoU(txtfile_path):
+    # 打开文件并读取内容
+    with open(txtfile_path, 'r') as file:
+        lines = file.readlines()
+
+    # 初始化一个变量来存储最大的 IoU 值
+    max_iou = 0.0
+
+    # 遍历每一行，查找 "valid_IoU:" 并提取后面的数字
+    for line in lines:
+        if 'valid_IoU:' in line:
+            # 找到 "valid_IoU:" 的位置
+            iou_start = line.find('valid_IoU:')
+            if iou_start != -1:
+                # 提取 "valid_IoU:" 后面的数字
+                iou_str = line[iou_start + len('valid_IoU:'): iou_start + len('valid_IoU:') + 8].strip()
+                try:
+                    iou_value = float(iou_str)
+                    max_iou = max(max_iou, iou_value)
+                except ValueError:
+                    pass
+
+    # 打印最大的 IoU 值
+    print(f"最大的 IoU 值: {max_iou}")
+
+
 
 
 if __name__ == '__main__':
@@ -177,7 +203,10 @@ if __name__ == '__main__':
     # analyse_MMOTU_mean_std(r"./datasets/MMOTU")
 
     # 计算MMOTU数据集前景和背景加权权重
-    cal_MMOTU_weights(r"./datasets/MMOTU")
+    # cal_MMOTU_weights(r"./datasets/MMOTU")
+
+    # 计算日志文件中valid_IoU数值最大值
+    cal_max_valid_IoU(r"./log.txt")
 
 
 
