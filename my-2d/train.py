@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -89,9 +89,9 @@ params = {
 
     "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.0001,  # 学习率
+    "learning_rate": 0.0005,  # 学习率
 
-    "weight_decay": 0.000001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
@@ -135,12 +135,12 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 2000,  # 训练时的结束epoch
+    "end_epoch": 120,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
