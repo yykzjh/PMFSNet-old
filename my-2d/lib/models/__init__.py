@@ -5,6 +5,12 @@ import lib.utils as utils
 
 from .PMFSNet import PMFSNet
 from .MobileNetV2 import MobileNetV2
+from .PSPNet import PSPNet
+from .DANet import DANet
+from .SegFormer import SegFormer
+from .UNet import UNet
+from .TransUNet import TransUNet
+from .BiSeNetV2 import BiSeNetV2
 
 
 def get_model_optimizer_lr_scheduler(opt):
@@ -14,6 +20,24 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["model_name"] == "MobileNetV2":
         model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
+
+    elif opt["model_name"] == "PSPNet":
+        model = PSPNet(n_classes=opt["classes"], backend='resnet50', pretrained=True)
+
+    elif opt["model_name"] == "DANet":
+        model = DANet(nclass=opt["classes"])
+
+    elif opt["model_name"] == "SegFormer":
+        model = SegFormer(channels=opt["in_channels"], num_classes=opt["classes"])
+
+    elif opt["model_name"] == "UNet":
+        model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "TransUNet":
+        model = TransUNet(in_channels=opt["in_channels"], class_num=opt["classes"])
+
+    elif opt["model_name"] == "BiSeNetV2":
+        model = BiSeNetV2(n_classes=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
@@ -92,7 +116,25 @@ def get_model(opt):
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
-        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"], width_mult=1.)
+        model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
+
+    elif opt["model_name"] == "PSPNet":
+        model = PSPNet(n_classes=opt["classes"], backend='resnet50', pretrained=True)
+
+    elif opt["model_name"] == "DANet":
+        model = DANet(nclass=opt["classes"])
+
+    elif opt["model_name"] == "SegFormer":
+        model = SegFormer(channels=opt["in_channels"], num_classes=opt["classes"])
+
+    elif opt["model_name"] == "UNet":
+        model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
+
+    elif opt["model_name"] == "TransUNet":
+        model = TransUNet(in_channels=opt["in_channels"], class_num=opt["classes"])
+
+    elif opt["model_name"] == "BiSeNetV2":
+        model = BiSeNetV2(n_classes=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
