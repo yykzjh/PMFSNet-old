@@ -6,6 +6,14 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+import torch
+
+from thop import profile
+from ptflops import get_model_complexity_info
+from pytorch_model_summary import summary
+
+import lib.models as models
+
 
 def analyse_MMOTU_annotations():
     root_dir = r"./datasets/MMOTU/OTU_2d"
@@ -190,6 +198,44 @@ def cal_max_valid_IoU(txtfile_path):
     print(f"最大的 IoU 值: {max_iou}")
 
 
+def count_parameters(model):
+    """计算PyTorch模型的参数数量"""
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def analyse_models(model_names_list):
+    # 先构造参数字典
+    opt = {
+        "in_channels": 3,
+        "classes": 2,
+        "resize_shape": (224, 224),
+        "device": "cuda:0",
+    }
+    # 遍历统计各个模型参数量
+    for model_name in model_names_list:
+        # if model_name != "TransUNet":
+        #     continue
+        # 获取当前模型
+        opt["model_name"] = model_name
+        model = models.get_model(opt)
+
+        print("***************************************** model name: {} *****************************************".format(model_name))
+
+        print("params: {:.6f}M".format(count_parameters(model)/1e6))
+
+        input = torch.randn(1, 3, 224, 224).to(opt["device"])
+        flops, params = profile(model, (input,))
+        print("flops: {:.6f}G, params: {:.6f}M".format(flops / 1e9, params / 1e6))
+
+        try:
+            flops, params = get_model_complexity_info(model, (3, 224, 224), as_strings=False, print_per_layer_stat=False)
+            print("flops: {:.6f}G, params: {:.6f}M".format(flops / 1e9, params / 1e6))
+        except:
+            continue
+
+        print(summary(model, input, show_input=False, show_hierarchical=False))
+
+
 
 
 if __name__ == '__main__':
@@ -206,7 +252,12 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 计算日志文件中valid_IoU数值最大值
-    cal_max_valid_IoU(r"./log.txt")
+    # cal_max_valid_IoU(r"./log.txt")
+
+    # 依次计算一组模型的计算量和参数量
+    analyse_models(["PMRFNet", "MobileNetV2", "PSPNet", "DANet", "SegFormer", "UNet", "TransUNet", "BiSeNetV2"])
+
+
 
 
 

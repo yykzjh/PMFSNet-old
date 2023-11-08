@@ -10,6 +10,7 @@ from .DANet import DANet
 from .SegFormer import SegFormer
 from .UNet import UNet
 from .TransUNet import TransUNet
+from .TransUNet import CONFIGS as CONFIGS_ViT_seg
 from .BiSeNetV2 import BiSeNetV2
 
 
@@ -34,7 +35,11 @@ def get_model_optimizer_lr_scheduler(opt):
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "TransUNet":
-        model = TransUNet(in_channels=opt["in_channels"], class_num=opt["classes"])
+        config_vit = CONFIGS_ViT_seg["R50-ViT-B_16"]
+        config_vit.n_classes = opt["classes"]
+        config_vit.n_skip = 3
+        config_vit.patches.grid = (int(opt["resize_shape"][0] / 16), int(opt["resize_shape"][1] / 16))
+        model = TransUNet(config_vit, img_size=opt["resize_shape"][0], num_classes=config_vit.n_classes)
 
     elif opt["model_name"] == "BiSeNetV2":
         model = BiSeNetV2(n_classes=opt["classes"])
@@ -119,7 +124,7 @@ def get_model(opt):
         model = MobileNetV2(in_channels=opt["in_channels"], out_channels=opt["classes"], input_size=opt["resize_shape"][0], width_mult=1.)
 
     elif opt["model_name"] == "PSPNet":
-        model = PSPNet(n_classes=opt["classes"], backend='resnet50', pretrained=True)
+        model = PSPNet(n_classes=opt["classes"], backend='resnet50', pretrained=False)
 
     elif opt["model_name"] == "DANet":
         model = DANet(nclass=opt["classes"])
@@ -131,7 +136,11 @@ def get_model(opt):
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "TransUNet":
-        model = TransUNet(in_channels=opt["in_channels"], class_num=opt["classes"])
+        config_vit = CONFIGS_ViT_seg["R50-ViT-B_16"]
+        config_vit.n_classes = opt["classes"]
+        config_vit.n_skip = 3
+        config_vit.patches.grid = (int(opt["resize_shape"][0] / 16), int(opt["resize_shape"][1] / 16))
+        model = TransUNet(config_vit, img_size=opt["resize_shape"][0], num_classes=config_vit.n_classes)
 
     elif opt["model_name"] == "BiSeNetV2":
         model = BiSeNetV2(n_classes=opt["classes"])
