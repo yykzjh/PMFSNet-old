@@ -504,7 +504,7 @@ class GlobalPMFSBlock_AP_Separate(nn.Module):
         # 定义对通道分数矩阵的卷积
         self.ch_score_conv = nn.Conv2d(self.ch_in, self.ch_in, 1)
         # 定义对通道分数矩阵的LayerNorm层归一化
-        self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1, 1))
+        self.ch_layer_norm = nn.LayerNorm((self.ch_in, 1, 1))
         # 定义sigmoid
         self.sigmoid = nn.Sigmoid()
 
@@ -534,49 +534,49 @@ class GlobalPMFSBlock_AP_Separate(nn.Module):
             for i, ch_conv in enumerate(self.ch_convs)
         ]
         # 将不同分支的特征进行拼接
-        x = torch.cat(ch_outs, dim=1)  # bs, self.ch_in, d, h, w
+        x = torch.cat(ch_outs, dim=1)  # bs, self.ch_in, h, w
         # 获得拼接后特征图的维度信息
-        bs, c, d, h, w = x.size()
+        bs, c, h, w = x.size()
 
         # 先计算通道ch_Q、ch_K、ch_V
-        ch_Q = self.ch_Wq(x)  # bs, self.ch_in, d, h, w
-        ch_K = self.ch_Wk(x)  # bs, 1, d, h, w
-        ch_V = self.ch_Wv(x)  # bs, self.ch_in, d, h, w
+        ch_Q = self.ch_Wq(x)  # bs, self.ch_in, h, w
+        ch_K = self.ch_Wk(x)  # bs, 1, h, w
+        ch_V = self.ch_Wv(x)  # bs, self.ch_in, h, w
         # 转换通道ch_Q维度
-        ch_Q = ch_Q.reshape(bs, -1, d * h * w)  # bs, self.ch_in, d*h*w
+        ch_Q = ch_Q.reshape(bs, -1, h * w)  # bs, self.ch_in, h*w
         # 转换通道ch_K维度
-        ch_K = ch_K.reshape(bs, -1, 1)  # bs, d*h*w, 1
+        ch_K = ch_K.reshape(bs, -1, 1)  # bs, h*w, 1
         # 对通道ch_K采取softmax
-        ch_K = self.ch_softmax(ch_K)  # bs, d*h*w, 1
+        ch_K = self.ch_softmax(ch_K)  # bs, h*w, 1
         # 将通道ch_Q和通道ch_K相乘
-        Z = torch.matmul(ch_Q, ch_K).unsqueeze(-1).unsqueeze(-1)  # bs, self.ch_in, 1, 1, 1
+        Z = torch.matmul(ch_Q, ch_K).unsqueeze(-1)  # bs, self.ch_in, 1, 1
         # 计算通道注意力分数矩阵
-        ch_score = self.sigmoid(self.ch_layer_norm(self.ch_score_conv(Z)))  # bs, self.ch_in, 1, 1, 1
+        ch_score = self.sigmoid(self.ch_layer_norm(self.ch_score_conv(Z)))  # bs, self.ch_in, 1, 1
         # 通道增强
-        ch_out = ch_V * ch_score  # bs, self.ch_in, d, h, w
+        ch_out = ch_V * ch_score  # bs, self.ch_in, h, w
 
         # 先计算空间sp_Q、sp_K、sp_V
-        sp_Q = self.sp_Wq(ch_out)  # bs, self.br*self.ch_k, d, h, w
-        sp_K = self.sp_Wk(ch_out)  # bs, self.br*self.ch_k, d, h, w
-        sp_V = self.sp_Wv(ch_out)  # bs, self.br*self.ch_v, d, h, w
+        sp_Q = self.sp_Wq(ch_out)  # bs, self.br*self.ch_k, h, w
+        sp_K = self.sp_Wk(ch_out)  # bs, self.br*self.ch_k, h, w
+        sp_V = self.sp_Wv(ch_out)  # bs, self.br*self.ch_v, h, w
         # 转换空间sp_Q维度
-        sp_Q = sp_Q.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).reshape(bs, self.ch_k, -1)  # bs, self.ch_k, d*h*w*self.br
+        sp_Q = sp_Q.reshape(bs, self.br, self.ch_k, h, w).permute(0, 2, 3, 4, 1).reshape(bs, self.ch_k, -1)  # bs, self.ch_k, h*w*self.br
         # 转换空间sp_K维度
-        sp_K = sp_K.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1).mean(-1).mean(-1).mean(-1).mean(-1).reshape(bs, 1, self.ch_k)  # bs, 1, self.ch_k
+        sp_K = sp_K.reshape(bs, self.br, self.ch_k, h, w).permute(0, 2, 3, 4, 1).mean(-1).mean(-1).mean(-1).reshape(bs, 1, self.ch_k)  # bs, 1, self.ch_k
         # 转换空间sp_V维度
-        sp_V = sp_V.reshape(bs, self.br, self.ch_k, d, h, w).permute(0, 2, 3, 4, 5, 1)  # bs, self.ch_v, d, h, w, self.br
+        sp_V = sp_V.reshape(bs, self.br, self.ch_k, h, w).permute(0, 2, 3, 4, 1)  # bs, self.ch_v, h, w, self.br
         # 对空间sp_K采取softmax
         sp_K = self.sp_softmax(sp_K)  # bs, 1, self.ch_k
         # 将空间sp_K和空间sp_Q相乘
-        Z = torch.matmul(sp_K, sp_Q).reshape(bs, 1, d, h, w, self.br)  # bs, 1, d, h, w, self.br
+        Z = torch.matmul(sp_K, sp_Q).reshape(bs, 1, h, w, self.br)  # bs, 1, h, w, self.br
         # 计算空间注意力分数矩阵
-        sp_score = self.sigmoid(Z)  # bs, 1, d, h, w, self.br
+        sp_score = self.sigmoid(Z)  # bs, 1, h, w, self.br
         # 空间增强
-        sp_out = sp_V * sp_score  # bs, self.ch_v, d, h, w, self.br
+        sp_out = sp_V * sp_score  # bs, self.ch_v, h, w, self.br
         # 变换空间增强后的维度
-        sp_out = sp_out.permute(0, 5, 1, 2, 3, 4).reshape(bs, self.br * self.ch_v, d, h, w)  # bs, self.br*self.ch_v, d, h, w
+        sp_out = sp_out.permute(0, 4, 1, 2, 3).reshape(bs, self.br * self.ch_v, h, w)  # bs, self.br*self.ch_v, h, w
         # 还原通道数
-        sp_out = self.sp_output_conv(sp_out)  # bs, self.ch_in, d, h, w
+        sp_out = self.sp_output_conv(sp_out)  # bs, self.ch_in, h, w
 
         # 最终的输出卷积，将通道数转换为输入的瓶颈层特征图通道数
         out = self.output_conv(sp_out)
