@@ -41,6 +41,9 @@ class Trainer:
                 utils.make_dirs(self.checkpoint_dir)
                 utils.make_dirs(self.tensorboard_dir)
 
+            # 使用的模型、优化器、学习率调度器记录到日志文件
+            utils.pre_write_txt("初始化模型:{}、优化器:{}和学习率调整器:{}".format(self.opt["model_name"], self.opt["optimizer_name"], self.opt["lr_scheduler_name"]), self.log_txt_path)
+
         # 训练时需要用到的参数
         self.start_epoch = self.opt["start_epoch"]
         self.end_epoch = self.opt["end_epoch"]
@@ -296,6 +299,9 @@ class Trainer:
             self.model.load_state_dict(model_state_dict, strict=True)
             # 输出权重参数加载率
             print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
+            # 将预训练权重加载情况记录到日志文件
+            if not self.opt["optimize_params"]:
+                utils.pre_write_txt("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)), self.log_txt_path)
         else:  # 如果不需要继续训练
             # 有可能需要加载模型的预训练参数
             if self.opt["pretrain"] is not None:
@@ -314,6 +320,9 @@ class Trainer:
                 self.model.load_state_dict(model_state_dict, strict=True)
                 # 输出权重参数加载率
                 print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
+                # 将预训练权重加载情况记录到日志文件
+                if not self.opt["optimize_params"]:
+                    utils.pre_write_txt("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)), self.log_txt_path)
 
 
 
