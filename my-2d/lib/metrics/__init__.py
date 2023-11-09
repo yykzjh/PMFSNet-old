@@ -8,6 +8,8 @@
 """
 from .DICE import *
 from .IoU import *
+from .JI import *
+from .ACC import *
 
 
 def get_metric(opt):
@@ -19,6 +21,12 @@ def get_metric(opt):
 
         elif metric_name == "IoU":
             metric[metric_name] = IoU(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"])
+
+        elif metric_name == "JI":
+            metric[metric_name] = JI(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"])
+
+        elif metric_name == "ACC":
+            metric[metric_name] = ACC(num_classes=opt["classes"], sigmoid_normalization=opt["sigmoid_normalization"])
 
         else:
             raise Exception(f"{metric_name}是不支持的评价指标！")

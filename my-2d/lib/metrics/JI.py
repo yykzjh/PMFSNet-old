@@ -17,15 +17,15 @@ from lib.utils import *
 
 
 
-class IoU(object):
+class JI(object):
     def __init__(self, num_classes=33, sigmoid_normalization=False):
         """
-        定义IoU评价指标计算器
+        定义JI评价指标计算器
 
         :param num_classes: 类别数
         :param sigmoid_normalization: 对网络输出采用sigmoid归一化方法，否则采用softmax
         """
-        super(IoU, self).__init__()
+        super(JI, self).__init__()
         # 初始化参数
         self.num_classes = num_classes
         # 初始化sigmoid或者softmax归一化方法
@@ -37,7 +37,7 @@ class IoU(object):
 
     def __call__(self, input, target):
         """
-        IoU
+        JI
 
         :param input: 网络模型输出的预测图,(B, C, H, W)
         :param target: 标注图像,(B, H, W)
@@ -50,11 +50,11 @@ class IoU(object):
         seg = torch.argmax(input, dim=1)
         # 判断预测图和真是标签图的维度大小是否一致
         assert seg.shape == target.shape, "seg和target的维度大小不一致"
-        # 转换seg和target数据类型为整型
-        seg = seg.type(torch.float32)
-        target = target.type(torch.float32)
+        # 转换seg和target数据类型为numpy.ndarray
+        seg = seg.numpy().astype(float)
+        target = target.numpy().astype(float)
 
-        return intersect_and_union(seg, target, self.num_classes, reduce_zero_label=False)
+        return cal_jaccard_index(seg, target)
 
 
 
@@ -68,11 +68,11 @@ if __name__ == '__main__':
     pred = torch.randn((4, 2, 32, 32))
     gt = torch.randint(2, (4, 32, 32))
 
-    IoU_metric = IoU(num_classes=2)
+    JI_metric = JI(num_classes=2)
 
-    intersect, union, _, _ = IoU_metric(pred, gt)
+    ji = JI_metric(pred, gt)
 
-    print((intersect[1].to(torch.float64) / (union[1].to(torch.float64) + 1e-6)).item())
+    print(ji)
 
 
 

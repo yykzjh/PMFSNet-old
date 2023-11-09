@@ -61,7 +61,7 @@ params = {
 
     "dataset_name": "ISIC2018",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
 
-    "dataset_path": r"./datasets/ISIC2018",  # 数据集路径
+    "dataset_path": r"../../PMFS-Net/my-2d/datasets/ISIC2018",  # 数据集路径
 
     "batch_size": 32,  # batch_size大小
 
@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": "./pretrain/best_PMRFNet.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": r"../../PMFS-Net/my-2d/pretrain/best_PMRFNet.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -120,7 +120,7 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
-    "metric_names": ["DSC", "IoU"],  # 评价指标，可选["DSC", "IoU"]
+    "metric_names": ["DSC", "IoU", "JI", "ACC"],  # 评价指标，可选["DSC", "IoU", "JI", "ACC"]
 
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
@@ -140,13 +140,13 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 120,  # 训练时的结束epoch
+    "end_epoch": 20,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
     "terminal_show_freq": 20,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 

@@ -25,9 +25,62 @@ def f_score(precision, recall, beta=1):
     Returns:
         [torch.tensor]: The f-score value.
     """
-    score = (1 + beta**2) * (precision * recall) / (
-        (beta**2 * precision) + recall)
+    score = (1 + beta ** 2) * (precision * recall) / (
+            (beta ** 2 * precision) + recall)
     return score
+
+
+def cal_jaccard_index(result, reference):
+    """
+    Jaccard coefficient
+
+    Computes the Jaccard coefficient between the binary objects in two images.
+
+    Parameters
+    ----------
+    result: array_like
+            Input data containing objects. Can be any type but will be converted
+            into binary: background where 0, object everywhere else.
+    reference: array_like
+            Input data containing objects. Can be any type but will be converted
+            into binary: background where 0, object everywhere else.
+
+    Returns
+    -------
+    jc: float
+        The Jaccard coefficient between the object(s) in `result` and the
+        object(s) in `reference`. It ranges from 0 (no overlap) to 1 (perfect overlap).
+
+    Notes
+    -----
+    This is a real metric. The binary images can therefore be supplied in any order.
+    """
+    result = np.atleast_1d(result.astype(bool))
+    reference = np.atleast_1d(reference.astype(bool))
+
+    intersection = np.count_nonzero(result & reference)
+    union = np.count_nonzero(result | reference)
+
+    jc = float(intersection) / (float(union) + 1e-6)
+
+    return jc
+
+
+def cal_accuracy(result, reference):
+    result = np.atleast_1d(result.astype(bool))
+    reference = np.atleast_1d(reference.astype(bool))
+
+    tp = np.count_nonzero(result & reference)
+    tn = np.count_nonzero(~result & ~reference)
+    fp = np.count_nonzero(result & ~reference)
+    fn = np.count_nonzero(~result & reference)
+
+    try:
+        ACC = (tp + tn) / (tp + tn + fp + fn)
+    except ZeroDivisionError:
+        ACC = 0.0
+
+    return ACC
 
 
 def intersect_and_union(pred_label,
@@ -95,10 +148,10 @@ def total_intersect_and_union(results,
          ndarray: The prediction histogram on all classes.
          ndarray: The ground truth histogram on all classes.
     """
-    total_area_intersect = torch.zeros((num_classes, ), dtype=torch.float64)
-    total_area_union = torch.zeros((num_classes, ), dtype=torch.float64)
-    total_area_pred_label = torch.zeros((num_classes, ), dtype=torch.float64)
-    total_area_label = torch.zeros((num_classes, ), dtype=torch.float64)
+    total_area_intersect = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_union = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_pred_label = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_label = torch.zeros((num_classes,), dtype=torch.float64)
     for result, gt_seg_map in zip(results, gt_seg_maps):
         area_intersect, area_union, area_pred_label, area_label = \
             intersect_and_union(
@@ -109,7 +162,7 @@ def total_intersect_and_union(results,
         total_area_pred_label += area_pred_label
         total_area_label += area_label
     return total_area_intersect, total_area_union, total_area_pred_label, \
-        total_area_label
+           total_area_label
 
 
 def mean_iou(results,
@@ -265,9 +318,9 @@ def eval_metrics(results,
     """
 
     total_area_intersect, total_area_union, total_area_pred_label, \
-        total_area_label = total_intersect_and_union(
-            results, gt_seg_maps, num_classes, ignore_index, label_map,
-            reduce_zero_label)
+    total_area_label = total_intersect_and_union(
+        results, gt_seg_maps, num_classes, ignore_index, label_map,
+        reduce_zero_label)
     ret_metrics = total_area_to_metrics(total_area_intersect, total_area_union,
                                         total_area_pred_label,
                                         total_area_label, metrics, nan_to_num,
@@ -353,7 +406,7 @@ def total_area_to_metrics(total_area_intersect,
             ret_metrics['Acc'] = acc
         elif metric == 'mDice':
             dice = 2 * total_area_intersect / (
-                total_area_pred_label + total_area_label)
+                    total_area_pred_label + total_area_label)
             acc = total_area_intersect / total_area_label
             ret_metrics['Dice'] = dice
             ret_metrics['Acc'] = acc
@@ -376,3 +429,26 @@ def total_area_to_metrics(total_area_intersect,
             for metric, metric_value in ret_metrics.items()
         })
     return ret_metrics
+
+
+if __name__ == '__main__':
+    pred = torch.tensor([
+        [0, 0, 0, 0, 0],
+        [1, 1, 1, 0, 0],
+        [1, 1, 1, 0, 0],
+        [1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0]
+    ])
+    label = torch.tensor([
+        [0, 0, 1, 0, 0],
+        [0, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0]
+    ])
+
+    area_intersect, area_union, _, _ = intersect_and_union(pred, label, num_classes=2)
+    iou = area_intersect / (area_union + 1e-7)
+    print(iou)
+
+    print(jaccard(pred, label))
