@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -54,7 +54,7 @@ params = {
 
     "dataset_path": r"/home/oj/distributed_floder/datasets/Imagenet2012/",  # 数据集路径
 
-    "batch_size": 256,  # batch_size大小
+    "batch_size": 32,  # batch_size大小
 
     "num_workers": 2,  # num_workers大小
 
@@ -115,11 +115,11 @@ params = {
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 150,  # 训练时的结束epoch
+    "end_epoch": 120,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 1000,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 10000,  # 终端打印统计信息的频率,以step为单位
 
     "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
 }
