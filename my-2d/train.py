@@ -61,7 +61,7 @@ params = {
 
     "dataset_name": "ISIC2018",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
 
-    "dataset_path": r"../../PMFS-Net/my-2d/datasets/ISIC2018",  # 数据集路径
+    "dataset_path": r"./datasets/ISIC2018_only_use_trainset",  # 数据集路径
 
     "batch_size": 32,  # batch_size大小
 

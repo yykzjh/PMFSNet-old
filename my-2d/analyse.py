@@ -254,6 +254,42 @@ def analyse_ISIC2018_mean_std(root_dir):
 
 
 
+def split_ISIC2018_dataset(root_dir):
+    src_root_dir = os.path.join(root_dir, "ISIC2018")
+    dst_root_dir  = os.path.join(root_dir, "ISIC2018_only_use_trainset")
+    if os.path.exists(dst_root_dir):
+        shutil.rmtree(dst_root_dir)
+    os.makedirs(dst_root_dir)
+    src_train_dir = os.path.join(src_root_dir, "train")
+    src_train_images_dir = os.path.join(src_train_dir, "images")
+    src_train_annotations_dir = os.path.join(src_train_dir, "annotations")
+
+    sub_dataset_names = ["train", "valid", "test"]
+    for sub_dataset_name in sub_dataset_names:
+        sub_dataset_dir = os.path.join(dst_root_dir, sub_dataset_name)
+        os.makedirs(sub_dataset_dir)
+        sub_dataset_images_dir = os.path.join(sub_dataset_dir, "images")
+        os.makedirs(sub_dataset_images_dir)
+        sub_dataset_annotations_dir = os.path.join(sub_dataset_dir, "annotations")
+        os.makedirs(sub_dataset_annotations_dir)
+        with open("folder1_" + sub_dataset_name + ".list", "r") as file:
+            for line in tqdm(file.readlines()):
+                line = line.strip()
+                image_name = os.path.splitext(line)[0]
+                # 获取原始图像及其label的路径
+                src_image_path = os.path.join(src_train_images_dir, image_name + ".jpg")
+                src_annotation_path = os.path.join(src_train_annotations_dir, image_name + "_segmentation.png")
+                # 计算目标图像及其label的路径
+                dst_image_path = os.path.join(sub_dataset_images_dir, image_name + ".jpg")
+                dst_annotation_path = os.path.join(sub_dataset_annotations_dir, image_name + "_segmentation.png")
+                # 分别复制
+                shutil.copyfile(src_image_path, dst_image_path)
+                shutil.copyfile(src_annotation_path, dst_annotation_path)
+
+
+
+
+
 
 
 
@@ -277,7 +313,10 @@ if __name__ == '__main__':
     # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet"])
 
     # 分析ISIC2018数据集均值和标准差
-    analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
+    # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
+
+    # 用ISIC2018的原始训练集来划分训练集、验证集和测试集
+    split_ISIC2018_dataset(r"./datasets")
 
 
 
