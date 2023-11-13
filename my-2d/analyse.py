@@ -204,6 +204,58 @@ def analyse_models(model_names_list):
         print(summary(model, input, show_input=False, show_hierarchical=False))
 
 
+def analyse_ISIC2018_mean_std(root_dir):
+    sums = np.zeros(3)
+    counts = np.zeros(3)
+
+    src_dir = os.path.join(root_dir, "train")
+    src_images_dir = os.path.join(src_dir, "images")
+    for image_name in tqdm(os.listdir(src_images_dir)):
+        image_path = os.path.join(src_images_dir, image_name)
+        image = cv2.imread(image_path)
+        image = image / 255
+        tmp_sums = image.sum(axis=0).sum(axis=0)
+        sums += tmp_sums
+        counts += image.shape[0] * image.shape[1]
+    src_dir = os.path.join(root_dir, "test")
+    src_images_dir = os.path.join(src_dir, "images")
+    for image_name in tqdm(os.listdir(src_images_dir)):
+        image_path = os.path.join(src_images_dir, image_name)
+        image = cv2.imread(image_path)
+        image = image / 255
+        tmp_sums = image.sum(axis=0).sum(axis=0)
+        sums += tmp_sums
+        counts += image.shape[0] * image.shape[1]
+    means = sums / counts
+    print("means:", means)
+
+    std_sums = np.zeros(3)
+
+    src_dir = os.path.join(root_dir, "train")
+    src_images_dir = os.path.join(src_dir, "images")
+    for image_name in tqdm(os.listdir(src_images_dir)):
+        image_path = os.path.join(src_images_dir, image_name)
+        image = cv2.imread(image_path)
+        image = image / 255
+        tmp_image = (image - means.reshape((1, 1, 3))) ** 2
+        tmp_sums = tmp_image.sum(axis=0).sum(axis=0)
+        std_sums += tmp_sums
+    src_dir = os.path.join(root_dir, "test")
+    src_images_dir = os.path.join(src_dir, "images")
+    for image_name in tqdm(os.listdir(src_images_dir)):
+        image_path = os.path.join(src_images_dir, image_name)
+        image = cv2.imread(image_path)
+        image = image / 255
+        tmp_image = (image - means.reshape((1, 1, 3))) ** 2
+        tmp_sums = tmp_image.sum(axis=0).sum(axis=0)
+        std_sums += tmp_sums
+    stds = np.sqrt(std_sums / counts)
+    print("stds:", stds)
+
+
+
+
+
 
 
 
@@ -222,8 +274,10 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet"])
+    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet"])
 
+    # 分析ISIC2018数据集均值和标准差
+    analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
 
 
 
