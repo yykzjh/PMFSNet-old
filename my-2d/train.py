@@ -47,11 +47,11 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.12,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.22904836668079648,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.14,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.38246517137400915,  # 亮度、对比度、饱和度变化率范围
 
-    "random_rotation_angle": 15,  # 随机旋转角度范围
+    "random_rotation_angle": 30,  # 随机旋转角度范围
 
     # 标准化均值
     "normalize_means": (0.22250386, 0.21844882, 0.21521868),
@@ -87,11 +87,11 @@ params = {
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adam",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
+    "optimizer_name": "Adamax",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.0005,  # 学习率
+    "learning_rate": 0.01,  # 学习率
 
-    "weight_decay": 0.000005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.00005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
     "momentum": 0.8,  # 动量大小
 
@@ -106,7 +106,7 @@ params = {
 
     "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 30,  # CosineAnnealingLR的半周期
+    "T_max": 100,  # CosineAnnealingLR的半周期
 
     "T_0": 2,  # CosineAnnealingWarmRestarts的周期
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.12, 0.88],  # 各类别计算损失值的加权权重
+    "class_weight": [0.2300607869399642, 1-0.2300607869399642],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
@@ -135,18 +135,18 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 120,  # 训练时的结束epoch
+    "end_epoch": 2000,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
     "terminal_show_freq": 8,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 400,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 500,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
