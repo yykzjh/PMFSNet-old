@@ -8,7 +8,7 @@ trialGpuNumber: 1
 trialConcurrency: 1
 tunerGpuIndices: "1"
 maxExperimentDuration: 20d
-maxTrialNumber: 50
+maxTrialNumber: 150
 tuner:
   name: TPE
   classArgs:
