@@ -287,6 +287,43 @@ def split_ISIC2018_dataset(root_dir):
                 shutil.copyfile(src_annotation_path, dst_annotation_path)
 
 
+def cal_max_Dice_ACC(txtfile_path):
+    # 打开文件并读取内容
+    with open(txtfile_path, 'r') as file:
+        lines = file.readlines()
+
+    # 初始化一个变量来存储最大的 IoU 值
+    max_dsc = 0.0
+    max_acc = 0.0
+
+    # 遍历每一行，查找 "valid_DSC:"和"valid_ACC:"并提取后面的数字
+    for line in lines:
+        if 'valid_DSC:' in line:
+            # 找到 "valid_DSC:" 的位置
+            dsc_start = line.find('valid_DSC:')
+            if dsc_start != -1:
+                # 提取 "valid_DSC:" 后面的数字
+                dsc_str = line[dsc_start + len('valid_DSC:'): dsc_start + len('valid_DSC:') + 8].strip()
+                try:
+                    dsc_value = float(dsc_str)
+                    max_dsc = max(max_dsc, dsc_value)
+                except ValueError:
+                    pass
+        if 'valid_ACC:' in line:
+            # 找到 "valid_ACC:" 的位置
+            acc_start = line.find('valid_ACC:')
+            if acc_start != -1:
+                # 提取 "valid_ACC:" 后面的数字
+                acc_str = line[acc_start + len('valid_ACC:'): acc_start + len('valid_ACC:') + 8].strip()
+                try:
+                    acc_value = float(acc_str)
+                    max_acc = max(max_acc, acc_value)
+                except ValueError:
+                    pass
+
+    print("max_dsc:", max_dsc)
+    print("max_acc:", max_acc)
+
 
 
 
@@ -316,8 +353,10 @@ if __name__ == '__main__':
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
 
     # 用ISIC2018的原始训练集来划分训练集、验证集和测试集
-    split_ISIC2018_dataset(r"./datasets")
+    # split_ISIC2018_dataset(r"./datasets")
 
+    # 获取日志文件中"valid_DSC"和"valid_ACC"的最大值
+    cal_max_Dice_ACC(r"./log.txt")
 
 
 
