@@ -25,6 +25,7 @@ from functools import reduce
 from nibabel.viewers import OrthoSlicer3D
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
+import cv2
 
 import lib.utils as utils
 import lib.models as models
@@ -350,6 +351,50 @@ def count_all_models_parameters(model_names_list):
         print("flops: {:.6f}G, params: {:.6f}M".format(flops / 1e9, params / 1e6))
 
 
+def generate_NC_release_data_snapshot(root_dir, size=224):
+    src_image_dir = os.path.join(root_dir, "NC-release-data", "image")
+    src_label_dir = os.path.join(root_dir, "NC-release-data", "label")
+    dst_root_dir = os.path.join(root_dir, "snapshots")
+    if os.path.exists(dst_root_dir):
+        shutil.rmtree(dst_root_dir)
+    os.makedirs(dst_root_dir)
+
+    # 加载数据集中所有原图像
+    images_list = sorted(glob.glob(os.path.join(src_image_dir, "*.nii.gz")))
+    labels_list = sorted(glob.glob(os.path.join(src_label_dir, "*.nii.gz")))
+    for i in tqdm(range(len(images_list))):
+        file_name = os.path.splitext(os.path.splitext(os.path.basename(images_list[i]))[0])[0]
+        image_dir = os.path.join(dst_root_dir, file_name)
+        os.makedirs(image_dir)
+        # image_np = utils.load_image_or_label(images_list[i], (0.5, 0.5, 0.5), type="image")
+        label_np = utils.load_image_or_label(labels_list[i], (0.5, 0.5, 0.5), type="label")
+        h, w, d = label_np.shape
+        s = (d - 30) // 2
+        for j in range(6):
+            image_snapshot = label_np[:, :, s + 5 * j]
+            image_snapshot = cv2.transpose(image_snapshot)
+            image_snapshot = cv2.flip(image_snapshot, 0)
+            # image_snapshot = np.clip(image_snapshot, -450, 1450)
+            # image_snapshot = cv2.resize(image_snapshot, (size, size))
+            # cv2.imwrite(os.path.join(image_dir, str(j) + ".jpg"), image_snapshot)
+            plt.imshow(image_snapshot, cmap="gray")
+            plt.show()
+
+
+def compare_Dice():
+    x = np.linspace(0, 1, 1000)
+    y1 = 1 - ((2 * x) / (x + 1))
+    y2 = 1 - ((2 * x) / (x**2 + 1))
+
+    plt.plot(x, y1, label="original dice loss")
+    plt.plot(x, y2, label="extended dice loss")
+    plt.legend()
+    plt.xlabel("segment probability")
+    plt.ylabel("loss value")
+    plt.title("Comparison of loss functions")
+
+    plt.show()
+
 
 
 
@@ -370,6 +415,12 @@ if __name__ == '__main__':
     # analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
 
     # 统计所有网络模型的参数量
-    count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-                                 "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
+    # count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+    #                              "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
+
+    # 生成牙齿数据集快照
+    # generate_NC_release_data_snapshot(r"./datasets")
+
+    # 对别两类Dice Loss
+    compare_Dice()
 
