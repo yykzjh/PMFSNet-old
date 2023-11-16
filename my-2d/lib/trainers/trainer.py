@@ -76,7 +76,7 @@ class Trainer:
             valid_class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
             valid_class_IoU = np.nan_to_num(valid_class_IoU)
             # 计算验证集上的dsc
-            valid_dsc = self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"]
+            valid_dsc = self.statistics_dict["valid"]["DSC"]["foreground"] / self.statistics_dict["valid"]["class_count"]["foreground"],
             # 计算验证集上的JI
             valid_JI = self.statistics_dict["valid"]["JI_sum"] / self.statistics_dict["valid"]["count"]
             # 计算验证集上的ACC
@@ -95,7 +95,7 @@ class Trainer:
                             epoch, self.end_epoch - 1,
                             self.optimizer.param_groups[0]['lr'],
                             self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                            self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                            self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
                             train_class_IoU[1],
                             self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                             self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
@@ -111,7 +111,7 @@ class Trainer:
                                 epoch, self.end_epoch - 1,
                                 self.optimizer.param_groups[0]['lr'],
                                 self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                                self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
                                 train_class_IoU[1],
                                 self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                                 self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
@@ -175,7 +175,7 @@ class Trainer:
                               batch_idx + 1, len(self.train_data_loader),
                               self.optimizer.param_groups[0]['lr'],
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                              self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                              self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
                               train_class_IoU[1],
                               self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                               self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"]))
@@ -186,7 +186,7 @@ class Trainer:
                                                 batch_idx + 1, len(self.train_data_loader),
                                                 self.optimizer.param_groups[0]['lr'],
                                                 self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                                self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
+                                                self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
                                                 train_class_IoU[1],
                                                 self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                                                 self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"]),
