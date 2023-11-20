@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": r"../../PMFS-Net/my-2d/pretrain/PMFSNet2D-small_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": r"../../PMFS-Net/my-2d/pretrain/PMFSNet2D-basic_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
