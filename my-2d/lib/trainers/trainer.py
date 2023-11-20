@@ -76,7 +76,7 @@ class Trainer:
             valid_class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
             valid_class_IoU = np.nan_to_num(valid_class_IoU)
             # 计算验证集上的dsc
-            valid_dsc = self.statistics_dict["valid"]["DSC"]["foreground"] / self.statistics_dict["valid"]["class_count"]["foreground"],
+            valid_dsc = self.statistics_dict["valid"]["DSC"]["foreground"] / self.statistics_dict["valid"]["class_count"]["foreground"]
             # 计算验证集上的JI
             valid_JI = self.statistics_dict["valid"]["JI_sum"] / self.statistics_dict["valid"]["count"]
             # 计算验证集上的ACC
@@ -91,6 +91,22 @@ class Trainer:
             # epoch结束总的输出一下结果
             print(
                 "[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_DSC:{:.6f}  train_IoU:{:.6f}  train_ACC:{:.6f}  train_JI:{:.6f}  valid_DSC:{:.6f}  valid_IoU:{:.6f}  valid_ACC:{:.6f}  valid_JI:{:.6f}  best_JI:{:.6f}"
+                .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        epoch, self.end_epoch - 1,
+                        self.optimizer.param_groups[0]['lr'],
+                        self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
+                        self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
+                        train_class_IoU[1],
+                        self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
+                        self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
+                        valid_dsc,
+                        valid_class_IoU[1],
+                        valid_ACC,
+                        valid_JI,
+                        self.best_metric))
+            if not self.opt["optimize_params"]:
+                utils.pre_write_txt(
+                    "[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_DSC:{:.6f}  train_IoU:{:.6f}  train_ACC:{:.6f}  train_JI:{:.6f}  valid_DSC:{:.6f}  valid_IoU:{:.6f}  valid_ACC:{:.6f}  valid_JI:{:.6f}  best_JI:{:.6f}"
                     .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             epoch, self.end_epoch - 1,
                             self.optimizer.param_groups[0]['lr'],
@@ -103,23 +119,7 @@ class Trainer:
                             valid_class_IoU[1],
                             valid_ACC,
                             valid_JI,
-                            self.best_metric))
-            if not self.opt["optimize_params"]:
-                utils.pre_write_txt(
-                    "[{}]  epoch:[{:05d}/{:05d}]  lr:{:.6f}  train_loss:{:.6f}  train_DSC:{:.6f}  train_IoU:{:.6f}  train_ACC:{:.6f}  train_JI:{:.6f}  valid_DSC:{:.6f}  valid_IoU:{:.6f}  valid_ACC:{:.6f}  valid_JI:{:.6f}  best_JI:{:.6f}"
-                        .format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                epoch, self.end_epoch - 1,
-                                self.optimizer.param_groups[0]['lr'],
-                                self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
-                                train_class_IoU[1],
-                                self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
-                                self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
-                                valid_dsc,
-                                valid_class_IoU[1],
-                                valid_ACC,
-                                valid_JI,
-                                self.best_metric), self.log_txt_path)
+                            self.best_metric), self.log_txt_path)
                 # self.write_statistcs(mode="epoch", iter=epoch)
 
             if self.opt["optimize_params"]:
