@@ -47,11 +47,11 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.4209060227225273,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.11037550950769187,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.3950966017873225,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.4211105480340698,  # 亮度、对比度、饱和度变化率范围
 
-    "random_rotation_angle": 15,  # 随机旋转角度范围
+    "random_rotation_angle": 30,  # 随机旋转角度范围
 
     # 标准化均值
     "normalize_means": (0.50297405, 0.54711632, 0.71049083),
@@ -83,24 +83,24 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": r"../../PMFS-Net/my-2d/pretrain/PMFSNet2D-basic_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": r"../../PMFS-Net/my-2d/pretrain/PMFSNet2D-small_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adamax",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
+    "optimizer_name": "RMSprop",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
-    "learning_rate": 0.001,  # 学习率
+    "learning_rate": 0.00005,  # 学习率
 
-    "weight_decay": 0.00001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.0001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
-    "momentum": 0.8,  # 动量大小
+    "momentum": 0.9149932014169715,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "ExponentialLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
-    "gamma": 0.1,  # 学习率衰减系数
+    "gamma": 0.9743085530964077,  # 学习率衰减系数
 
     "step_size": 9,  # StepLR的学习率衰减步长
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.24210380140876986, 1-0.24210380140876986],  # 各类别计算损失值的加权权重
+    "class_weight": [0.28431933013427857, 1-0.28431933013427857],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
