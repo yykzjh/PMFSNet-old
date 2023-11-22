@@ -292,7 +292,7 @@ class Trainer:
             load_count = 0  # 成功加载参数计数
             for param_name in model_state_dict.keys():
                 # 判断当前模型参数是否在预训练参数中
-                if param_name in pretrain_state_dict:
+                if (param_name in pretrain_state_dict) and (model_state_dict[param_name].size() == pretrain_state_dict[param_name].size()):
                     model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
                     load_count += 1
             # 严格加载模型参数
@@ -313,7 +313,7 @@ class Trainer:
                 load_count = 0  # 成功加载参数计数
                 for param_name in model_state_dict.keys():
                     # 判断当前模型参数是否在预训练参数中
-                    if param_name in pretrain_state_dict:
+                    if (param_name in pretrain_state_dict) and (model_state_dict[param_name].size() == pretrain_state_dict[param_name].size()):
                         model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
                         load_count += 1
                 # 严格加载模型参数
