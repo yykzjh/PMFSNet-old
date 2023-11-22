@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -47,9 +47,9 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.22904836668079648,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.22366862102871926,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.38246517137400915,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.44633375501462796,  # 亮度、对比度、饱和度变化率范围
 
     "random_rotation_angle": 30,  # 随机旋转角度范围
 
@@ -83,40 +83,40 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": "./pretrain/best_PMRFNet.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/PMFSNet2D-basic_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
-    "optimizer_name": "Adamax",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
+    "optimizer_name": "AdamW",  # 优化器名称，可选["SGD", "Adagrad", "RMSprop", "Adam", "AdamW", "Adamax", "Adadelta"]
 
     "learning_rate": 0.01,  # 学习率
 
-    "weight_decay": 0.00005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.0005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
-    "momentum": 0.8,  # 动量大小
+    "momentum": 0.752774942206123,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingWarmRestarts",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
-    "gamma": 0.1,  # 学习率衰减系数
+    "gamma": 0.8499257217966435,  # 学习率衰减系数
 
-    "step_size": 9,  # StepLR的学习率衰减步长
+    "step_size": 5,  # StepLR的学习率衰减步长
 
     "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 100,  # CosineAnnealingLR的半周期
+    "T_max": 60,  # CosineAnnealingLR的半周期
 
-    "T_0": 2,  # CosineAnnealingWarmRestarts的周期
+    "T_0": 20,  # CosineAnnealingWarmRestarts的周期
 
-    "T_mult": 2,  # CosineAnnealingWarmRestarts的周期放大倍数
+    "T_mult": 5,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
     "patience": 10,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
 
-    "factor": 0.97,  # ReduceLROnPlateau的衰减系数
+    "factor": 0.3,  # ReduceLROnPlateau的衰减系数
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.2300607869399642, 1-0.2300607869399642],  # 各类别计算损失值的加权权重
+    "class_weight": [0.35018384305846306, 1-0.35018384305846306],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
@@ -135,12 +135,12 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 2000,  # 训练时的结束epoch
+    "end_epoch": 120,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
