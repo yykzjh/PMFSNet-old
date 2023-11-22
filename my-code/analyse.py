@@ -24,7 +24,9 @@ from tqdm import tqdm
 from functools import reduce
 from nibabel.viewers import OrthoSlicer3D
 import SimpleITK as sitk
+from proplot import rc
 import matplotlib.pyplot as plt
+
 import cv2
 
 import lib.utils as utils
@@ -382,18 +384,30 @@ def generate_NC_release_data_snapshot(root_dir, size=224):
 
 
 def compare_Dice():
+    # 统一设置字体
+    rc["font.family"] = "Times New Roman"
+    # 统一设置轴刻度标签的字体大小
+    rc['tick.labelsize'] = 20
+    # 统一设置xy轴名称的字体大小
+    rc["axes.labelsize"] = 20
+    # 统一设置轴刻度标签的字体粗细
+    rc["axes.labelweight"] = "light"
+    # 统一设置xy轴名称的字体粗细
+    rc["tick.labelweight"] = "light"
+
     x = np.linspace(0, 1, 1000)
     y1 = 1 - ((2 * x) / (x + 1))
     y2 = 1 - ((2 * x) / (x**2 + 1))
 
     plt.plot(x, y1, label="original dice loss")
     plt.plot(x, y2, label="extended dice loss")
-    plt.legend()
+    plt.legend(fontsize=16)
     plt.xlabel("segment probability")
     plt.ylabel("loss value")
-    plt.title("Comparison of loss functions")
+    plt.title("Comparison of loss functions", fontsize=16)
 
-    plt.show()
+
+    plt.savefig('loss.jpg', dpi=600, bbox_inches='tight')
 
 
 
