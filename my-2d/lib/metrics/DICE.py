@@ -41,18 +41,18 @@ class DICE(object):
 
         Returns:
         """
-        # ont-hot处理，将标注图在axis=1维度上扩张，该维度大小等于预测图的通道C大小，维度上每一个索引依次对应一个类别,(B, C, H, W)
-        target = expand_as_one_hot(target.long(), self.num_classes)
-
-        # 判断one-hot处理后标注图和预测图的维度是否都是4维
-        assert input.dim() == target.dim() == 4, "one-hot处理后标注图和预测图的维度不是都为4维！"
-        # 判断one-hot处理后标注图和预测图的尺寸是否一致
-        assert input.size() == target.size(), "one-hot处理后预测图和标注图的尺寸不一致！"
-
         # 对预测图进行Sigmiod或者Sofmax归一化操作
         input = self.normalization(input)
 
-        return compute_per_channel_dice(input, target, epsilon=1e-6, mode=self.mode)
+        # 将预测图像进行分割
+        seg = torch.argmax(input, dim=1)
+        # 判断预测图和真是标签图的维度大小是否一致
+        assert seg.shape == target.shape, "seg和target的维度大小不一致"
+        # 转换seg和target数据类型为numpy.ndarray
+        seg = seg.numpy().astype(float)
+        target = target.numpy().astype(float)
+
+        return cal_dsc(seg, target)
 
 
 

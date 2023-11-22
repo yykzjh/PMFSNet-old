@@ -41,7 +41,6 @@ class Trainer:
             if self.opt["resume"] is None:
                 utils.make_dirs(self.checkpoint_dir)
                 utils.make_dirs(self.tensorboard_dir)
-            # self.writer = SummaryWriter(log_dir=self.tensorboard_dir, purge_step=0, max_queue=1, flush_secs=30)
             # 使用的模型、优化器、学习率调度器记录到日志文件
             utils.pre_write_txt("初始化模型:{}、优化器:{}和学习率调整器:{}".format(self.opt["model_name"], self.opt["optimizer_name"], self.opt["lr_scheduler_name"]), self.log_txt_path)
 
@@ -76,7 +75,7 @@ class Trainer:
             valid_class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
             valid_class_IoU = np.nan_to_num(valid_class_IoU)
             # 计算验证集上的dsc
-            valid_dsc = self.statistics_dict["valid"]["DSC"]["foreground"] / self.statistics_dict["valid"]["class_count"]["foreground"]
+            valid_dsc = self.statistics_dict["valid"]["DSC_sum"] / self.statistics_dict["valid"]["count"]
             # 计算验证集上的JI
             valid_JI = self.statistics_dict["valid"]["JI_sum"] / self.statistics_dict["valid"]["count"]
             # 计算验证集上的ACC
@@ -95,7 +94,7 @@ class Trainer:
                         epoch, self.end_epoch - 1,
                         self.optimizer.param_groups[0]['lr'],
                         self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                        self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
+                        self.statistics_dict["train"]["DSC_sum"] / self.statistics_dict["train"]["count"],
                         train_class_IoU[1],
                         self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                         self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
@@ -111,7 +110,7 @@ class Trainer:
                             epoch, self.end_epoch - 1,
                             self.optimizer.param_groups[0]['lr'],
                             self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                            self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
+                            self.statistics_dict["train"]["DSC_sum"] / self.statistics_dict["train"]["count"],
                             train_class_IoU[1],
                             self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                             self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"],
@@ -120,7 +119,6 @@ class Trainer:
                             valid_ACC,
                             valid_JI,
                             self.best_metric), self.log_txt_path)
-                # self.write_statistcs(mode="epoch", iter=epoch)
 
             if self.opt["optimize_params"]:
                 # 向nni上报每个epoch验证集的mIoU作为中间指标
@@ -129,11 +127,6 @@ class Trainer:
         if self.opt["optimize_params"]:
             # 将在验证集上最优的mIoU作为最终上报指标
             nni.report_final_result(self.best_metric)
-
-        # if not self.opt["optimize_params"]:
-        #     # 关闭tensorboard
-        #     time.sleep(60)
-        #     self.writer.close()
 
     def train_epoch(self, epoch):
 
@@ -159,10 +152,6 @@ class Trainer:
             # 计算各评价指标并更新中间统计信息
             self.calculate_metric_and_update_statistcs(output.cpu().float(), target.cpu().float(), len(target), dice_loss.cpu(), mode="train")
 
-            # # 每一次参数更新都将统计数据写入到tensorboard
-            # if not self.opt["optimize_params"]:
-            #     self.write_statistcs(mode="step", iter=epoch*len(self.train_data_loader)+batch_idx)
-
             # 判断满不满足打印信息或者画图表的周期
             if (batch_idx + 1) % self.terminal_show_freq == 0:
                 # 计算IoU和mIoU
@@ -175,7 +164,7 @@ class Trainer:
                               batch_idx + 1, len(self.train_data_loader),
                               self.optimizer.param_groups[0]['lr'],
                               self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                              self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
+                              self.statistics_dict["train"]["DSC_sum"] / self.statistics_dict["train"]["count"],
                               train_class_IoU[1],
                               self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                               self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"]))
@@ -186,7 +175,7 @@ class Trainer:
                                                 batch_idx + 1, len(self.train_data_loader),
                                                 self.optimizer.param_groups[0]['lr'],
                                                 self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                                self.statistics_dict["train"]["DSC"]["foreground"] / self.statistics_dict["train"]["class_count"]["foreground"],
+                                                self.statistics_dict["train"]["DSC_sum"] / self.statistics_dict["train"]["count"],
                                                 train_class_IoU[1],
                                                 self.statistics_dict["train"]["ACC_sum"] / self.statistics_dict["train"]["count"],
                                                 self.statistics_dict["train"]["JI_sum"] / self.statistics_dict["train"]["count"]),
@@ -226,55 +215,6 @@ class Trainer:
                 if not self.opt["optimize_params"]:
                     self.save(epoch, cur_JI, self.best_metric, type="best")
 
-    def write_statistcs(self, mode="step", iter=None):
-        """
-        将统计信息写入到tensorboard图表中
-
-        :param mode: "step"训练时每一步的数据，"epoch"每个epoch结束后的数据
-        :param iter: 当前step次数
-        :return:
-        """
-        if mode == "step":
-            # 写入dice_loss
-            self.writer.add_scalar("step_train_loss",
-                                   self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                   iter)
-            # 写入dsc评价指标
-            self.writer.add_scalar("step_train_dsc",
-                                   self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
-                                   iter)
-            # 写入IoU和mIoU
-            class_IoU = self.statistics_dict["train"]["total_area_intersect"] / self.statistics_dict["train"]["total_area_union"]
-            class_IoU = np.nan_to_num(class_IoU)
-            mIoU = np.mean(class_IoU)
-            self.writer.add_scalar("step_train_IoU", class_IoU[1], iter)
-            self.writer.add_scalar("step_train_mIoU", mIoU, iter)
-        else:
-            # 写入epoch_loss
-            self.writer.add_scalar("epoch_train_loss",
-                                   self.statistics_dict["train"]["loss"] / self.statistics_dict["train"]["count"],
-                                   iter)
-            # 写入train_dsc
-            self.writer.add_scalar("epoch_train_dsc",
-                                   self.statistics_dict["train"]["DSC"]["avg"] / self.statistics_dict["train"]["count"],
-                                   iter)
-            # 写入valid_dsc
-            self.writer.add_scalar("epoch_valid_dsc",
-                                   self.statistics_dict["valid"]["DSC"]["avg"] / self.statistics_dict["valid"]["count"],
-                                   iter)
-            # 写入epoch_train_IoU和epoch_train_mIoU
-            class_IoU = self.statistics_dict["train"]["total_area_intersect"] / self.statistics_dict["train"]["total_area_union"]
-            class_IoU = np.nan_to_num(class_IoU)
-            mIoU = np.mean(class_IoU)
-            self.writer.add_scalar("epoch_train_IoU", class_IoU[1], iter)
-            self.writer.add_scalar("epoch_train_mIoU", mIoU, iter)
-            # 写入epoch_valid_IoU和epoch_valid_mIoU
-            class_IoU = self.statistics_dict["valid"]["total_area_intersect"] / self.statistics_dict["valid"]["total_area_union"]
-            class_IoU = np.nan_to_num(class_IoU)
-            mIoU = np.mean(class_IoU)
-            self.writer.add_scalar("epoch_valid_IoU", class_IoU[1], iter)
-            self.writer.add_scalar("epoch_valid_mIoU", mIoU, iter)
-
     def calculate_metric_and_update_statistcs(self, output, target, cur_batch_size, loss=None, mode="train"):
         """
         计算评价指标并更新中间统计信息字典
@@ -313,6 +253,9 @@ class Trainer:
             elif metric_name == "JI":
                 batch_mean_JI = metric_func(output, target)
                 self.statistics_dict[mode]["JI_sum"] += batch_mean_JI * cur_batch_size
+            elif metric_name == "DSC":
+                batch_mean_DSC = metric_func(output, target)
+                self.statistics_dict[mode]["DSC_sum"] += batch_mean_DSC * cur_batch_size
             else:
                 # 计算当前评价指标在各类别上的数值
                 per_class_metric = metric_func(output, target)
@@ -347,6 +290,9 @@ class Trainer:
         # 初始化ACC的累计和
         statistics_dict["train"]["ACC_sum"] = 0.0
         statistics_dict["valid"]["ACC_sum"] = 0.0
+        # 初始化DSC的累计和
+        statistics_dict["train"]["DSC_sum"] = 0.0
+        statistics_dict["valid"]["DSC_sum"] = 0.0
         # 初始化所有评价指标在所有类别上的平均值
         for metric_name in self.opt["metric_names"]:
             statistics_dict["train"][metric_name]["avg"] = 0.0
@@ -373,6 +319,8 @@ class Trainer:
             self.statistics_dict[phase]["JI_sum"] = 0.0
             # 初始化ACC的累计和
             self.statistics_dict[phase]["ACC_sum"] = 0.0
+            # 初始化DSC的累计和
+            self.statistics_dict[phase]["DSC_sum"] = 0.0
             # 重置各类别计数
             for _, class_name in self.opt["index_to_class_dict"].items():
                 self.statistics_dict[phase]["class_count"][class_name] = 0

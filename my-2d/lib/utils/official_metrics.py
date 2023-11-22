@@ -13,6 +13,56 @@ import numpy as np
 import torch
 
 
+def cal_dsc(result, reference):
+    r"""
+    Dice coefficient
+
+    Computes the Dice coefficient (also known as Sorensen index) between the binary
+    objects in two images.
+
+    The metric is defined as
+
+    .. math::
+
+        DC=\frac{2|A\cap B|}{|A|+|B|}
+
+    , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).
+
+    Parameters
+    ----------
+    result : array_like
+        Input data containing objects. Can be any type but will be converted
+        into binary: background where 0, object everywhere else.
+    reference : array_like
+        Input data containing objects. Can be any type but will be converted
+        into binary: background where 0, object everywhere else.
+
+    Returns
+    -------
+    dc : float
+        The Dice coefficient between the object(s) in ```result``` and the
+        object(s) in ```reference```. It ranges from 0 (no overlap) to 1 (perfect overlap).
+
+    Notes
+    -----
+    This is a real metric. The binary images can therefore be supplied in any order.
+    """
+    result = np.atleast_1d(result.astype(bool))
+    reference = np.atleast_1d(reference.astype(bool))
+
+    intersection = np.count_nonzero(result & reference)
+
+    size_i1 = np.count_nonzero(result)
+    size_i2 = np.count_nonzero(reference)
+
+    try:
+        dc = 2. * intersection / (float(size_i1 + size_i2) + 1e-6)
+    except ZeroDivisionError:
+        dc = 0.0
+
+    return dc
+
+
 def f_score(precision, recall, beta=1):
     """calculate the f-score value.
 
