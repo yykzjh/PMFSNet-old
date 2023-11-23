@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
@@ -47,9 +47,9 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.22366862102871926,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.12097393901893663,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.44633375501462796,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.4203933474361258,  # 亮度、对比度、饱和度变化率范围
 
     "random_rotation_angle": 30,  # 随机旋转角度范围
 
@@ -91,16 +91,16 @@ params = {
 
     "learning_rate": 0.01,  # 学习率
 
-    "weight_decay": 0.0005,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
+    "weight_decay": 0.00001,  # 权重衰减系数,即更新网络参数时的L2正则化项的系数
 
-    "momentum": 0.752774942206123,  # 动量大小
+    "momentum": 0.7725414416309884,  # 动量大小
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "CosineAnnealingWarmRestarts",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
-    "gamma": 0.8499257217966435,  # 学习率衰减系数
+    "gamma": 0.8689275449032848,  # 学习率衰减系数
 
     "step_size": 5,  # StepLR的学习率衰减步长
 
@@ -108,15 +108,15 @@ params = {
 
     "T_max": 60,  # CosineAnnealingLR的半周期
 
-    "T_0": 20,  # CosineAnnealingWarmRestarts的周期
+    "T_0": 10,  # CosineAnnealingWarmRestarts的周期
 
     "T_mult": 5,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
-    "patience": 10,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
+    "patience": 1,  # ReduceLROnPlateau的衡量指标可以停止优化的最长epoch
 
-    "factor": 0.3,  # ReduceLROnPlateau的衰减系数
+    "factor": 0.97,  # ReduceLROnPlateau的衰减系数
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.35018384305846306, 1-0.35018384305846306],  # 各类别计算损失值的加权权重
+    "class_weight": [0.2350689696563569, 1-0.2350689696563569],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
