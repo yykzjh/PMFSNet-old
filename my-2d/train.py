@@ -157,7 +157,6 @@ if __name__ == '__main__':
         # 获得下一组搜索空间中的参数
         tuner_params = nni.get_next_parameter()
         tuner_params["class_weight"] = [tuner_params["class_weight"], 1 - tuner_params["class_weight"]]
-        tuner_params["resize_shape"] = (tuner_params["resize_shape"], tuner_params["resize_shape"])
         # 更新参数
         params.update(tuner_params)
 
