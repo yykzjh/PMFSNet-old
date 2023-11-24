@@ -98,7 +98,7 @@ from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP, GlobalPMFSBlo
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
                  basic_module=DownSampleWithLocalPMFSBlock,
-                 global_module=GlobalPMFSBlock_AP):
+                 global_module=GlobalPMFSBlock_AP_Separate):
         super(PMFSNet, self).__init__()
 
         kernel_sizes = [5, 3, 3]
