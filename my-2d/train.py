@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": "./pretrain/PMFSNet2D-basic_global.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/PMFSNet2D-basic_global_new.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -157,6 +157,7 @@ if __name__ == '__main__':
         # 获得下一组搜索空间中的参数
         tuner_params = nni.get_next_parameter()
         tuner_params["class_weight"] = [tuner_params["class_weight"], 1 - tuner_params["class_weight"]]
+        tuner_params["resize_shape"] = (tuner_params["resize_shape"], tuner_params["resize_shape"])
         # 更新参数
         params.update(tuner_params)
 
