@@ -8,13 +8,13 @@
     "weight_decay": {"_type": "choice", "_value": [0.005, 0.001, 0.0005, 0.0001, 0.00005, 0.00001, 0.000005, 0.000001]},
     "momentum": {"_type": "uniform", "_value": [0.7, 0.99]},
 
-    "lr_scheduler_name": {"_type": "choice", "_value": ["ExponentialLR", "StepLR", "MultiStepLR", "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]},
+    "lr_scheduler_name": {"_type": "choice", "_value": ["ExponentialLR", "StepLR", "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]},
     "gamma": {"_type": "uniform", "_value": [0.8, 0.999]},
     "step_size": {"_type": "choice", "_value": [5, 10, 20]},
-    "T_max": {"_type": "choice", "_value": [10, 30, 60]},
-    "T_0": {"_type": "choice", "_value": [5, 10, 20, 40]},
-    "T_mult": {"_type": "choice", "_value": [2, 3, 4, 5]},
-    "patience": {"_type": "choice", "_value": [1, 10, 20]},
+    "T_max": {"_type": "choice", "_value": [50, 100, 200, 500]},
+    "T_0": {"_type": "choice", "_value": [10, 50, 100, 200]},
+    "T_mult": {"_type": "choice", "_value": [2, 4, 5]},
+    "patience": {"_type": "choice", "_value": [1, 3, 5]},
     "factor": {"_type": "choice", "_value": [0.1, 0.3, 0.5, 0.8, 0.9, 0.97]},
 
     "class_weight":  {"_type": "uniform", "_value": [0.01, 0.5]}
