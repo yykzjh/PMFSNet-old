@@ -97,7 +97,7 @@ params = {
 
     # ———————————————————————————————————————————    学习率调度器     —————————————————————————————————————————————————————
 
-    "lr_scheduler_name": "ReduceLROnPlateau",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
+    "lr_scheduler_name": "CosineAnnealingLR",  # 学习率调度器名称，可选["ExponentialLR", "StepLR", "MultiStepLR",
     # "CosineAnnealingLR", "CosineAnnealingWarmRestarts", "OneCycleLR", "ReduceLROnPlateau"]
 
     "gamma": 0.8689275449032848,  # 学习率衰减系数
@@ -106,7 +106,7 @@ params = {
 
     "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 60,  # CosineAnnealingLR的半周期
+    "T_max": 100,  # CosineAnnealingLR的半周期
 
     "T_0": 10,  # CosineAnnealingWarmRestarts的周期
 
