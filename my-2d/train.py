@@ -31,7 +31,7 @@ from lib import utils, dataloaders, models, losses, metrics, trainers
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
 
-    "CUDA_VISIBLE_DEVICES": "1",  # 选择可用的GPU编号
+    "CUDA_VISIBLE_DEVICES": "0",  # 选择可用的GPU编号
 
     "seed": 1777777,  # 随机种子
 
