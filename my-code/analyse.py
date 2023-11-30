@@ -387,9 +387,9 @@ def compare_Dice():
     # 统一设置字体
     rc["font.family"] = "Times New Roman"
     # 统一设置轴刻度标签的字体大小
-    rc['tick.labelsize'] = 20
+    rc['tick.labelsize'] = 14
     # 统一设置xy轴名称的字体大小
-    rc["axes.labelsize"] = 20
+    rc["axes.labelsize"] = 16
     # 统一设置轴刻度标签的字体粗细
     rc["axes.labelweight"] = "light"
     # 统一设置xy轴名称的字体粗细
@@ -399,12 +399,11 @@ def compare_Dice():
     y1 = 1 - ((2 * x) / (x + 1))
     y2 = 1 - ((2 * x) / (x**2 + 1))
 
-    plt.plot(x, y1, label="original dice loss")
-    plt.plot(x, y2, label="extended dice loss")
-    plt.legend(fontsize=16)
-    plt.xlabel("segment probability")
-    plt.ylabel("loss value")
-    plt.title("Comparison of loss functions", fontsize=16)
+    plt.plot(x, y1, label="Standard Dice Loss")
+    plt.plot(x, y2, label="Extended Dice Loss")
+    plt.legend(fontsize=14)
+    plt.xlabel("probability of ground truth class")
+    plt.ylabel("loss")
 
 
     plt.savefig('loss.jpg', dpi=600, bbox_inches='tight')
