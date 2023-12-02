@@ -28,6 +28,7 @@ from proplot import rc
 import matplotlib.pyplot as plt
 
 import cv2
+from PIL import Image, ImageDraw, ImageFont
 
 import lib.utils as utils
 import lib.models as models
@@ -409,6 +410,43 @@ def compare_Dice():
     plt.savefig('loss.jpg', dpi=600, bbox_inches='tight')
 
 
+def generate_samples_image(scale=2):
+    # 创建整个大图
+    image = np.full((970, 1090, 3), 255)
+    # 依次遍历
+    for i in range(4):
+        for j in range(3):
+            x = i * (224 + 8)
+            y = j * (360 + 5)
+            # 读取并处理图像
+            img = cv2.imread(r"./images/" + str(i) + str(j) + ".jpg")
+            img = cv2.resize(img, (360, 224))
+            image[x: x + 224, y: y + 360, :] = img
+    image = image[:, :, ::-1]
+    # 添加文字
+    image = Image.fromarray(np.uint8(image))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(r"C:\Windows\Fonts\times.ttf", 36)
+    color = (0, 0, 0)
+
+    position1 = (80, 925)
+    text1 = "Original image"
+    draw.text(position1, text1, font=font, fill=color)
+
+    position2 = (410, 925)
+    text2 = "Ground truth (2D)"
+    draw.text(position2, text2, font=font, fill=color)
+
+    position3 = (780, 925)
+    text3 = "Ground truth (3D)"
+    draw.text(position3, text3, font=font, fill=color)
+
+    image.show()
+    w, h = image.size
+    image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
+    print(image.size)
+    image.save(r"./images/3D_CBCT_Tooth_samples.jpg")
+
 
 
 
@@ -435,5 +473,8 @@ if __name__ == '__main__':
     # generate_NC_release_data_snapshot(r"./datasets")
 
     # 对别两类Dice Loss
-    compare_Dice()
+    # compare_Dice()
+
+    # 生成牙齿数据集的样本展示图
+    generate_samples_image(scale=2)
 
