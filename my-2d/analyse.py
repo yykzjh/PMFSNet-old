@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+from PIL import Image, ImageDraw, ImageFont
 
 import torch
 from thop import profile
@@ -325,7 +326,41 @@ def cal_max_Dice_ACC(txtfile_path):
     print("max_acc:", max_acc)
 
 
+def generate_samples_image(scale=2):
+    # 创建整个大图
+    image = np.full((970, 725, 3), 255)
+    # 依次遍历
+    for i in range(4):
+        x_img, y_img = i * (224 + 8), 0
+        img = cv2.imread(r"./images/" + str(i) + "0" + ".jpg")
+        img = cv2.resize(img, (360, 224))
+        image[x_img: x_img + 224, y_img: y_img + 360, :] = img
 
+        x_lab, y_lab = i * (224 + 8), 365
+        lab = cv2.imread(r"./images/" + str(i) + "1" + ".png")
+        lab = cv2.resize(lab, (360, 224))
+        image[x_lab: x_lab + 224, y_lab: y_lab + 360, :] = lab
+
+    image = image[:, :, ::-1]
+    # 添加文字
+    image = Image.fromarray(np.uint8(image))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(r"C:\Windows\Fonts\times.ttf", 36)
+    color = (0, 0, 0)
+
+    position1 = (80, 925)
+    text1 = "Original image"
+    draw.text(position1, text1, font=font, fill=color)
+
+    position2 = (450, 925)
+    text2 = "Ground truth"
+    draw.text(position2, text2, font=font, fill=color)
+
+    image.show()
+    w, h = image.size
+    image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
+    print(image.size)
+    image.save(r"./images/ISIC_2018_samples.jpg")
 
 
 
@@ -356,7 +391,9 @@ if __name__ == '__main__':
     # split_ISIC2018_dataset(r"./datasets")
 
     # 获取日志文件中"valid_DSC"和"valid_ACC"的最大值
-    cal_max_Dice_ACC(r"./log.txt")
+    # cal_max_Dice_ACC(r"./log.txt")
 
+    # 生成ISIC 2018数据集图像样本展示图
+    generate_samples_image(scale=2)
 
 
