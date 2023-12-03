@@ -19,20 +19,20 @@ from lib.models.modules.ConvBlock import ConvBlock
 from lib.models.modules.RecurrentResidualBlock import RecurrentResidualBlock
 from lib.models.modules.GridAttentionGate3d import GridAttentionGate3d
 from lib.models.modules.LocalPMFSBlock import DownSampleWithLocalPMFSBlock
-from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP, GlobalPMFSBlock_AP_Separate
 
 
 
 class PMFSNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=35,
                  basic_module=DownSampleWithLocalPMFSBlock,
-                 global_module=GlobalPMFSBlock_AP):
+                 global_module=GlobalPMFSBlock_AP_Separate):
         super(PMFSNet, self).__init__()
 
         kernel_sizes = [5, 3, 3]
         base_channels = [24, 24, 24]
         skip_channels = [12, 24, 24]
-        units = [5, 10, 10]
+        units = [3, 5, 5]
         growth_rates = [4, 8, 16]
         downsample_channels = [base_channels[i] + units[i] * growth_rates[i] for i in range(len(base_channels))]  # [44, 104, 184]
 
@@ -51,14 +51,14 @@ class PMFSNet(nn.Module):
                 )
             )
 
-        # self.Global = global_module(
-        #     in_channels=downsample_channels,
-        #     max_pool_kernels=[4, 2, 1],
-        #     ch=48,
-        #     ch_k=48,
-        #     ch_v=48,
-        #     br=3
-        # )
+        self.Global = global_module(
+            in_channels=downsample_channels,
+            max_pool_kernels=[4, 2, 1],
+            ch=48,
+            ch_k=48,
+            ch_v=48,
+            br=3
+        )
 
         self.up2 = torch.nn.Upsample(scale_factor=2, mode='trilinear')
         self.up_conv2 = basic_module(in_channel=downsample_channels[2] + skip_channels[1],
@@ -96,8 +96,8 @@ class PMFSNet(nn.Module):
         x2, x2_skip = self.down_convs[1](x1)
         x3 = self.down_convs[2](x2)
 
-        # d3 = self.Global([x1, x2, x3])
-        d3 = x3
+        d3 = self.Global([x1, x2, x3])
+        # d3 = x3
 
         # decoding + concat
         d2 = self.up2(d3)
