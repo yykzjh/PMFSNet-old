@@ -466,8 +466,8 @@ if __name__ == '__main__':
     # analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
 
     # 统计所有网络模型的参数量
-    # count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-    #                              "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
+    count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
+                                 "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
 
     # 生成牙齿数据集快照
     # generate_NC_release_data_snapshot(r"./datasets")
@@ -476,5 +476,5 @@ if __name__ == '__main__':
     # compare_Dice()
 
     # 生成牙齿数据集的样本展示图
-    generate_samples_image(scale=2)
+    # generate_samples_image(scale=2)
 
