@@ -54,9 +54,9 @@ class PMFSNet(nn.Module):
         self.Global = global_module(
             in_channels=downsample_channels,
             max_pool_kernels=[4, 2, 1],
-            ch=32,
-            ch_k=32,
-            ch_v=32,
+            ch=48,
+            ch_k=48,
+            ch_v=48,
             br=3
         )
 
