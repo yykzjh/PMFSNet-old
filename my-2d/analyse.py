@@ -187,6 +187,8 @@ def analyse_models(model_names_list):
     }
     # 遍历统计各个模型参数量
     for model_name in model_names_list:
+        if model_name != "AttU_Net":
+            continue
         # 获取当前模型
         opt["model_name"] = model_name
         model = models.get_model(opt)
@@ -382,7 +384,7 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet"])
+    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
     # 分析ISIC2018数据集均值和标准差
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
@@ -394,6 +396,6 @@ if __name__ == '__main__':
     # cal_max_Dice_ACC(r"./log.txt")
 
     # 生成ISIC 2018数据集图像样本展示图
-    generate_samples_image(scale=2)
+    # generate_samples_image(scale=2)
 
 

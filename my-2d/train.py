@@ -61,7 +61,7 @@ params = {
 
     "dataset_name": "ISIC2018",  # 数据集名称， 可选["NCTooth", "MMOTU", "ISIC2018"]
 
-    "dataset_path": r"./datasets/ISIC2018_only_use_trainset",  # 数据集路径
+    "dataset_path": r"./datasets/ISIC2018_train_test",  # 数据集路径
 
     "batch_size": 32,  # batch_size大小
 
@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": r"../../PMFS-Net/my-2d/pretrain/PMFSNet2D-basic_sglobal.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": None,  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -135,18 +135,18 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 20,  # 训练时的结束epoch
+    "end_epoch": 150,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
-    "terminal_show_freq": 15,  # 终端打印统计信息的频率,以step为单位
+    "terminal_show_freq": 20,  # 终端打印统计信息的频率,以step为单位
 
-    "save_epoch_freq": 30,  # 每多少个epoch保存一次训练状态和模型参数
+    "save_epoch_freq": 50,  # 每多少个epoch保存一次训练状态和模型参数
 }
 
 
