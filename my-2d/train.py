@@ -47,9 +47,9 @@ params = {
 
     # ——————————————————————————————————————————————    数据增强    ——————————————————————————————————————————————————————
 
-    "augmentation_p": 0.35282704987170166,  # 每张图像做数据增强的概率
+    "augmentation_p": 0.1,  # 每张图像做数据增强的概率
 
-    "color_jitter": 0.2680656935993321,  # 亮度、对比度、饱和度变化率范围
+    "color_jitter": 0.37,  # 亮度、对比度、饱和度变化率范围
 
     "random_rotation_angle": 15,  # 随机旋转角度范围
 
@@ -108,9 +108,9 @@ params = {
 
     "T_max": 100,  # CosineAnnealingLR的半周期
 
-    "T_0": 20,  # CosineAnnealingWarmRestarts的周期
+    "T_0": 5,  # CosineAnnealingWarmRestarts的周期
 
-    "T_mult": 3,  # CosineAnnealingWarmRestarts的周期放大倍数
+    "T_mult": 5,  # CosineAnnealingWarmRestarts的周期放大倍数
 
     "mode": "max",  # ReduceLROnPlateau的衡量指标变化方向
 
@@ -125,7 +125,7 @@ params = {
     "loss_function_name": "DiceLoss",  # 损失函数名称，可选["DiceLoss","CrossEntropyLoss","WeightedCrossEntropyLoss",
     # "MSELoss","SmoothL1Loss","L1Loss","WeightedSmoothL1Loss","BCEDiceLoss","BCEWithLogitsLoss"]
 
-    "class_weight": [0.07033986265670567, 1-0.07033986265670567],  # 各类别计算损失值的加权权重
+    "class_weight": [0.029, 1-0.029],  # 各类别计算损失值的加权权重
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
