@@ -12,6 +12,7 @@ from .BCDUNet import BCDU_net_D3
 from .CANet import Comprehensive_Atten_Unet
 from .CENet import CE_Net
 from .CPFNet import CPF_Net
+from .AttU_Net import AttU_Net
 
 
 def get_model_optimizer_lr_scheduler(opt):
@@ -42,6 +43,9 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["model_name"] == "CPFNet":
         model = CPF_Net(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "AttU_Net":
+        model = AttU_Net(img_ch=opt["in_channels"], output_ch=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
@@ -142,6 +146,9 @@ def get_model(opt):
 
     elif opt["model_name"] == "CPFNet":
         model = CPF_Net(classes=opt["classes"], channels=opt["in_channels"])
+
+    elif opt["model_name"] == "AttU_Net":
+        model = AttU_Net(img_ch=opt["in_channels"], output_ch=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
