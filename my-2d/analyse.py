@@ -214,7 +214,7 @@ def analyse_models(model_names_list):
     }
     # 遍历统计各个模型参数量
     for model_name in model_names_list:
-        if model_name != "PMFSNet":
+        if model_name != "MedT":
             continue
         # 获取当前模型
         opt["model_name"] = model_name
@@ -292,7 +292,7 @@ if __name__ == '__main__':
     # cal_max_valid_IoU(r"./log.txt")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "PSPNet", "DANet", "SegFormer", "UNet", "TransUNet", "BiSeNetV2"])
+    analyse_models(["PMFSNet", "MobileNetV2", "PSPNet", "DANet", "SegFormer", "UNet", "TransUNet", "BiSeNetV2", "MedT"])
 
     # 生成MMOTU样本展示图
     # generate_samples_image(scale=2)

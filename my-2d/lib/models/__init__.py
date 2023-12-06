@@ -12,6 +12,7 @@ from .UNet import UNet
 from .TransUNet import TransUNet
 from .TransUNet import CONFIGS as CONFIGS_ViT_seg
 from .BiSeNetV2 import BiSeNetV2
+from .MedT import MedT
 
 
 def get_model_optimizer_lr_scheduler(opt):
@@ -43,6 +44,9 @@ def get_model_optimizer_lr_scheduler(opt):
 
     elif opt["model_name"] == "BiSeNetV2":
         model = BiSeNetV2(n_classes=opt["classes"])
+
+    elif opt["model_name"] == "MedT":
+        model = MedT(imgchan=opt["in_channels"], num_classes=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
@@ -144,6 +148,9 @@ def get_model(opt):
 
     elif opt["model_name"] == "BiSeNetV2":
         model = BiSeNetV2(n_classes=opt["classes"])
+
+    elif opt["model_name"] == "MedT":
+        model = MedT(imgchan=opt["in_channels"], num_classes=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
