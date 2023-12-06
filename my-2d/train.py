@@ -83,7 +83,7 @@ params = {
 
     "resume": None,  # 是否重启之前某个训练节点，继续训练;如果需要则指定.state文件路径
 
-    "pretrain": "./pretrain/PMFSNet2D-basic_sglobal.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
+    "pretrain": "./pretrain/PMFSNet2D-basic_sglobal_new3.pth",  # 是否需要加载预训练权重，如果需要则指定预训练权重文件路径
 
     # ——————————————————————————————————————————————    优化器     ——————————————————————————————————————————————————————
 
@@ -106,7 +106,7 @@ params = {
 
     "milestones": [10, 30, 60, 100, 120, 140, 160, 170],  # MultiStepLR的学习率衰减节点列表
 
-    "T_max": 100,  # CosineAnnealingLR的半周期
+    "T_max": 200,  # CosineAnnealingLR的半周期
 
     "T_0": 10,  # CosineAnnealingWarmRestarts的周期
 
@@ -135,12 +135,12 @@ params = {
 
     # —————————————————————————————————————————————   训练相关参数   ——————————————————————————————————————————————————————
 
-    "optimize_params": True,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
+    "optimize_params": False,  # 程序是否处于优化参数的模型，不需要保存训练的权重和中间结果
 
     "run_dir": r"./runs",  # 运行时产生的各类文件的存储根目录
 
     "start_epoch": 0,  # 训练时的起始epoch
-    "end_epoch": 120,  # 训练时的结束epoch
+    "end_epoch": 2000,  # 训练时的结束epoch
 
     "best_metric": 0,  # 保存检查点的初始条件
 
