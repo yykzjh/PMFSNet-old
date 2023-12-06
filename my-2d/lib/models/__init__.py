@@ -16,7 +16,7 @@ from .BiSeNetV2 import BiSeNetV2
 
 def get_model_optimizer_lr_scheduler(opt):
     # 初始化网络模型
-    if opt["model_name"] == "PMRFNet":
+    if opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
@@ -117,7 +117,7 @@ def get_model_optimizer_lr_scheduler(opt):
 
 def get_model(opt):
     # 初始化网络模型
-    if opt["model_name"] == "PMRFNet":
+    if opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "MobileNetV2":
