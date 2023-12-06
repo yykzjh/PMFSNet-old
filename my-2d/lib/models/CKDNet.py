@@ -29,7 +29,7 @@ class DeepLab_Aux(nn.Module):
     def __init__(self, backbone='resnet101', num_classes=1, return_features=False):
         super(DeepLab_Aux, self).__init__()
         self.return_features = return_features
-        self.backbone = BACKBONE[backbone](backbone=backbone, pretrained=True)
+        self.backbone = BACKBONE[backbone](backbone=backbone, pretrained=False)
         self.seg_branch = DeepLabDecoder(backbone=backbone, num_class=num_classes, return_features=return_features)
 
     def get_backbone_layers(self):
