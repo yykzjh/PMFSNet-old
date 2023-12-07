@@ -28,10 +28,10 @@ class conv_block(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.Conv2d(ch_out, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
         )
         self.dropout = drop_out
 
@@ -104,11 +104,11 @@ class UnetGridGatingSignal3(nn.Module):
         if is_batchnorm:
             self.conv1 = nn.Sequential(nn.Conv2d(in_size, out_size, kernel_size, (1, 1), (0, 0)),
                                        nn.BatchNorm2d(out_size),
-                                       nn.ReLU(inplace=True),
+                                       nn.ReLU(inplace=False),
                                        )
         else:
             self.conv1 = nn.Sequential(nn.Conv2d(in_size, out_size, kernel_size, (1, 1), (0, 0)),
-                                       nn.ReLU(inplace=True),
+                                       nn.ReLU(inplace=False),
                                        )
 
     def forward(self, inputs):

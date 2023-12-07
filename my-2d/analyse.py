@@ -384,7 +384,7 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
+    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
     # 分析ISIC2018数据集均值和标准差
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     # split_ISIC2018_dataset(r"./datasets")
 
     # 获取日志文件中"valid_DSC"和"valid_ACC"的最大值
-    # cal_max_Dice_ACC(r"./log.txt")
+    cal_max_Dice_ACC(r"./log.txt")
 
     # 生成ISIC 2018数据集图像样本展示图
     # generate_samples_image(scale=2)

@@ -13,9 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from lib.models.modules.modules import UnetDsv3
-from lib.models.modules.scale_attention_layer import scale_atten_convblock
 from lib.models.modules.scale_attention_layer_softpool import scale_atten_convblock_softpool
-from lib.models.modules.nonlocal_layer import NONLocalBlock2D
 
 
 
@@ -53,96 +51,6 @@ class Ms_red_v1(nn.Module):
         self.dsv1 = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
         self.scale_att = scale_atten_convblock_softpool(in_size=16, out_size=4)
         self.final = nn.Conv2d(4, classes, kernel_size=1)
-
-    # initialize_weights(self)
-
-    def forward(self, x):
-        enc_input = self.enc_input(x)  # [16, 3, 224, 320]-->[16, 32, 224, 320]
-        down1 = self.downsample(enc_input)  # [16, 32, 112, 160]
-
-        enc1 = self.encoder1(down1)  # [16, 64, 112, 160]
-        down2 = self.downsample(enc1)  # [16, 64, 56, 80]
-
-        enc2 = self.encoder2(down2)  # [16, 128, 56, 80]
-        down3 = self.downsample(enc2)  # [16, 128, 28, 40]
-
-        enc3 = self.encoder3(down3)  # [16, 256, 28, 40]
-        fused1 = self.assf_fusion4(enc3, enc2, enc1, enc_input)
-        down4 = self.downsample(fused1)  # [16, 256, 14, 20]
-
-        input_feature = self.encoder4(down4)  # [16, 512, 14, 18]
-
-        # Do Attenttion operations here
-        attention = self.affinity_attention(input_feature)  # [16, 512, 14, 18]
-
-        # attention_fuse = self.attention_fuse(torch.cat((input_feature, attention), dim=1))
-        attention_fuse = input_feature + attention  # [16, 512, 14, 18]
-
-        # Do decoder operations here
-        up4 = self.deconv4(attention_fuse)  # [16, 256, 28, 36]
-        up4 = torch.cat((enc3, up4), dim=1)
-        dec4 = self.decoder4(up4)
-
-        up3 = self.deconv3(dec4)
-        up3 = torch.cat((enc2, up3), dim=1)
-        dec3 = self.decoder3(up3)
-
-        up2 = self.deconv2(dec3)
-        up2 = torch.cat((enc1, up2), dim=1)
-        dec2 = self.decoder2(up2)
-
-        up1 = self.deconv1(dec2)
-        up1 = torch.cat((enc_input, up1), dim=1)
-        dec1 = self.decoder1(up1)
-
-        dsv4 = self.dsv4(dec4)  # [16, 4, 224, 320]
-        dsv3 = self.dsv3(dec3)
-        dsv2 = self.dsv2(dec2)
-        dsv1 = self.dsv1(dec1)
-        dsv_cat = torch.cat([dsv1, dsv2, dsv3, dsv4], dim=1)  # [16, 16, 224, 320]
-        out = self.scale_att(dsv_cat)  # [16, 4, 224, 300]
-
-        out = self.final(out)
-
-        final = F.sigmoid(out)
-        return final
-
-
-class Ms_red_v2(nn.Module):
-    def __init__(self, classes, channels):
-        """
-        :param classes: the object classes number.
-        :param channels: the channels of the input image.
-        """
-        super(Ms_red_v2, self).__init__()
-        self.out_size = (224, 320)
-        self.enc_input = ResEncoder_hs(channels, 32)
-        self.encoder1 = RFB7a_hs(32, 64)
-        self.encoder2 = RFB7a_hs(64, 128)
-        self.encoder3 = RFB7a_hs(128, 256)
-        self.encoder4 = RFB7a_hs_att(256, 512)
-        self.downsample = downsample_soft()
-        self.affinity_attention = AffinityAttention(512)
-        # self.affinity_attention = AffinityAttention_2(512)
-        # self.attention_fuse = nn.Conv2d(512 * 2, 512, kernel_size=1)
-        self.decoder4 = RFB7a_hs_att(512, 256)
-        self.decoder3 = RFB7a_hs(256, 128)
-        self.decoder2 = RFB7a_hs(128, 64)
-        self.decoder1 = RFB7a_hs(64, 32)
-        self.deconv4 = deconv(512, 256)
-        self.deconv3 = deconv(256, 128)
-        self.deconv2 = deconv(128, 64)
-        self.deconv1 = deconv(64, 32)
-
-        self.assf_fusion4 = ASFF_ddw(level=0)
-
-        self.dsv4 = UnetDsv3(in_size=256, out_size=4, scale_factor=self.out_size)
-        self.dsv3 = UnetDsv3(in_size=128, out_size=4, scale_factor=self.out_size)
-        self.dsv2 = UnetDsv3(in_size=64, out_size=4, scale_factor=self.out_size)
-        self.dsv1 = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
-        self.scale_att = scale_atten_convblock_softpool(in_size=16, out_size=4)
-        self.final = nn.Conv2d(4, classes, kernel_size=1)
-        initialize_weights(self)
 
     def forward(self, x):
         enc_input = self.enc_input(x)  # [16, 3, 224, 320]-->[16, 32, 224, 320]
@@ -208,18 +116,6 @@ def deconv(in_channels, out_channels):
     return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
 
 
-def initialize_weights(*models):
-    for model in models:
-        for m in model.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                nn.init.kaiming_normal(m.weight)
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-
-
 class SoftPooling2D(torch.nn.Module):
     def __init__(self, kernel_size, strides=None, padding=0, ceil_mode=False, count_include_pad=True, divisor_override=None):
         super(SoftPooling2D, self).__init__()
@@ -260,29 +156,14 @@ class HSBlock(nn.Module):
                 channels = in_ch + acc_channels
                 acc_channels = channels // 2
             self.module_list.append(self.conv_bn_relu(in_ch=channels, out_ch=channels))
-        self.initialize_weights()
 
     def conv_bn_relu(self, in_ch, out_ch, kernel_size=3, stride=1, padding=1):
         conv_bn_relu = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size, stride, padding),
             nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
         return conv_bn_relu
-
-    def initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    m.bias.data.zero_()
 
     def forward(self, x):
         x = list(x.chunk(chunks=self.s, dim=1))
@@ -325,29 +206,14 @@ class HSBlock_rfb(nn.Module):
                 channels = in_ch + acc_channels
                 acc_channels = channels // 2
             self.module_list.append(self.conv_bn_relu(in_ch=channels, out_ch=channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias))
-        self.initialize_weights()
 
     def conv_bn_relu(self, in_ch, out_ch, kernel_size, stride, padding, dilation, groups, bias):
         conv_bn_relu = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias),
             nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
         return conv_bn_relu
-
-    def initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    m.bias.data.zero_()
 
     def forward(self, x):
         x = list(x.chunk(chunks=self.s, dim=1))
@@ -370,7 +236,7 @@ class BasicConv(nn.Module):
         self.out_channels = out_planes
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias)
         self.bn = nn.BatchNorm2d(out_planes, eps=1e-5, momentum=0.01, affine=True) if bn else None
-        self.relu = nn.ReLU(inplace=True) if relu else None
+        self.relu = nn.ReLU(inplace=False) if relu else None
 
     def forward(self, x):
         x = self.conv(x)
@@ -390,7 +256,7 @@ class BasicConv_hs(nn.Module):
         self.out_channels = out_planes
         self.conv = HSBlock_rfb(in_planes, s=4, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias)
         self.bn = nn.BatchNorm2d(out_planes, eps=1e-5, momentum=0.01, affine=True) if bn else None
-        self.relu = nn.ReLU(inplace=True) if relu else None
+        self.relu = nn.ReLU(inplace=False) if relu else None
 
     def forward(self, x):
         x = self.conv(x)
@@ -734,9 +600,13 @@ class ResEncoder(nn.Module):
 
     def forward(self, x):
         residual = self.conv1x1(x)
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.relu(self.bn2(self.conv2(out)))
-        out += residual
+        outc1 = self.conv1(x)
+        outb1 = self.bn1(outc1)
+        outr1 = self.relu(outb1)
+        outc2 = self.conv2(outr1)
+        outb2 = self.bn2(outc2)
+        out = self.relu(outb2)
+        out = out + residual
         out = self.relu(out)
         return out
 
@@ -753,9 +623,13 @@ class ResEncoder_hs(nn.Module):
 
     def forward(self, x):
         residual = self.conv1x1(x)
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.relu(self.bn2(self.conv2(out)))
-        out += residual
+        outc1 = self.conv1(x)
+        outb1 = self.bn1(outc1)
+        outr1 = self.relu(outb1)
+        outc2 = self.conv2(outr1)
+        outb2 = self.bn2(outc2)
+        out = self.relu(outb2)
+        out = out + residual
         out = self.relu(out)
         return out
 
@@ -766,10 +640,10 @@ class Decoder(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
 
     def forward(self, x):
@@ -783,12 +657,12 @@ class SpatialAttentionBlock(nn.Module):
         self.query = nn.Sequential(
             nn.Conv2d(in_channels, in_channels // 8, kernel_size=(1, 3), padding=(0, 1)),
             nn.BatchNorm2d(in_channels // 8),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
         self.key = nn.Sequential(
             nn.Conv2d(in_channels, in_channels // 8, kernel_size=(3, 1), padding=(1, 0)),
             nn.BatchNorm2d(in_channels // 8),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
         self.value = nn.Conv2d(in_channels, in_channels, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
@@ -900,7 +774,7 @@ def add_conv(in_ch, out_ch, ksize, stride, leaky=True):
     if leaky:
         stage.add_module('leaky', nn.LeakyReLU(0.1))
     else:
-        stage.add_module('relu6', nn.ReLU6(inplace=True))
+        stage.add_module('relu6', nn.ReLU6(inplace=False))
     return stage
 
 

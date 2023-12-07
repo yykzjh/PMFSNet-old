@@ -199,7 +199,7 @@ class _NonLocalBlockND(nn.Module):
         # f=> RELU[(b, thw/s**2, thw) + (b, thw/s**2, thw)] = (b, thw/s**2, thw)
         f = self.wf_theta(theta_x).permute(0, 2, 1).repeat(1, phi_x.size(1), 1) + \
             self.wf_phi(phi_x).repeat(1, 1, theta_x.size(1))
-        f = F.relu(f, inplace=True)
+        f = F.relu(f, inplace=False)
 
         # Normalise the relations
         N = f.size(-1)
@@ -230,7 +230,7 @@ class _NonLocalBlockND(nn.Module):
         # f=> RELU[(b, 0.5c, thw/s**2, thw) + (b, 0.5c, thw/s**2, thw)] = (b, 0.5c, thw/s**2, thw)
         f = theta_x.unsqueeze(dim=2).repeat(1,1,phi_x.size(2),1) + \
             phi_x.unsqueeze(dim=3).repeat(1,1,1,theta_x.size(2))
-        f = F.relu(f, inplace=True)
+        f = F.relu(f, inplace=False)
 
         # psi -> W_psi^t * f -> (b, 1, thw/s**2, thw) -> (b, thw/s**2, thw)
         f = torch.squeeze(self.psi(f), dim=1)
@@ -265,7 +265,7 @@ class _NonLocalBlockND(nn.Module):
         # f=> RELU[(b, 0.5c, thw/s**2, thw) + (b, 0.5c, thw/s**2, thw)] = (b, 0.5c, thw/s**2, thw)
         f = theta_x.unsqueeze(dim=2).repeat(1,1,phi_x.size(2),1) + \
             phi_x.unsqueeze(dim=3).repeat(1,1,1,theta_x.size(2))
-        f = F.relu(f, inplace=True)
+        f = F.relu(f, inplace=False)
 
         # psi -> W_psi^t * f -> (b, 0.5c, thw/s**2, thw) -> (b, 1, thw/s**2, thw) -> (b, thw/s**2, thw)
         f = torch.squeeze(self.psi(f), dim=1)

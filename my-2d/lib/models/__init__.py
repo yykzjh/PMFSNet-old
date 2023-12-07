@@ -6,7 +6,7 @@ import lib.utils as utils
 from .PMFSNet import PMFSNet
 from .MobileNetV2 import MobileNetV2
 from .UNet import UNet
-from .MsRED import Ms_red_v1, Ms_red_v2
+from .MsRED import Ms_red_v1
 from .CKDNet import DeepLab_Aux
 from .BCDUNet import BCDU_net_D3
 from .CANet import Comprehensive_Atten_Unet

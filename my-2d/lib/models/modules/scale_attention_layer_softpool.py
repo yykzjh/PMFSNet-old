@@ -191,7 +191,7 @@ class scale_atten_convblock_softpool(nn.Module):
         self.no_spatial = no_spatial
         self.dropout = drop_out
 
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
         self.conv3 = conv3x3(in_size, out_size)
         self.bn3 = nn.BatchNorm2d(out_size)
 
