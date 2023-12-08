@@ -23,6 +23,7 @@ from .MultiResUNet3D import MultiResUNet3D
 from .DenseASPPUNet import DenseASPPUNet
 from .UNETR import UNETR
 from .TransBTS import BTS
+from .SwinUNETR import SwinUNETR
 
 from .PMFSNet import PMFSNet
 
@@ -63,7 +64,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = UNETR(in_channels=opt["in_channels"], out_channels=opt["classes"], img_size=(160, 160, 96))
 
     elif opt["model_name"] == "TransBTS":
-        model = BTS(img_dim=224, patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
+        model = BTS(img_dim=(160, 160, 96), patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
                     embedding_dim=512,
                     num_heads=8,
                     num_layers=4,
@@ -73,6 +74,9 @@ def get_model_optimizer_lr_scheduler(opt):
                     conv_patch_representation=True,
                     positional_encoding_type="learned",
                     )
+
+    elif opt["model_name"] == "SwinUNETR":
+        model = SwinUNETR(img_size=(160, 160, 96), in_channels=opt["in_channels"], out_channels=opt["classes"], feature_size=48, spatial_dims=3)
 
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
@@ -191,6 +195,10 @@ def get_model(opt):
                     conv_patch_representation=True,
                     positional_encoding_type="learned",
                     )
+
+
+    elif opt["model_name"] == "SwinUNETR":
+        model = SwinUNETR(img_size=(160, 160, 96), in_channels=opt["in_channels"], out_channels=opt["classes"], feature_size=48, spatial_dims=3)
 
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
