@@ -21,9 +21,10 @@ from .HighResNet3D import HighResNet3D
 from .DenseVoxelNet import DenseVoxelNet
 from .MultiResUNet3D import MultiResUNet3D
 from .DenseASPPUNet import DenseASPPUNet
-from .UNETR import UNETR
 from .TransBTS import BTS
-from .SwinUNETR import SwinUNETR
+from monai.networks.nets import UNETR, SwinUNETR
+from lib.models.nnFormer.nnFormer_seg import nnFormer
+from lib.models.UXNet_3D.network_backbone import UXNET
 
 from .PMFSNet import PMFSNet
 
@@ -61,7 +62,28 @@ def get_model_optimizer_lr_scheduler(opt):
         model = DenseASPPUNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "UNETR":
-        model = UNETR(in_channels=opt["in_channels"], out_channels=opt["classes"], img_size=(160, 160, 96))
+        model = UNETR(
+            in_channels=opt["in_channels"],
+            out_channels=opt["classes"],
+            img_size=(160, 160, 96),
+            feature_size=16,
+            hidden_size=768,
+            mlp_dim=3072,
+            num_heads=12,
+            pos_embed="perceptron",
+            norm_name="instance",
+            res_block=True,
+            dropout_rate=0.0,
+        )
+
+    elif opt["model_name"] == "SwinUNETR":
+        model = SwinUNETR(
+            img_size=(160, 160, 96),
+            in_channels=opt["in_channels"],
+            out_channels=opt["classes"],
+            feature_size=48,
+            use_checkpoint=False,
+        )
 
     elif opt["model_name"] == "TransBTS":
         model = BTS(img_dim=(160, 160, 96), patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
@@ -75,8 +97,19 @@ def get_model_optimizer_lr_scheduler(opt):
                     positional_encoding_type="learned",
                     )
 
-    elif opt["model_name"] == "SwinUNETR":
-        model = SwinUNETR(img_size=(160, 160, 96), in_channels=opt["in_channels"], out_channels=opt["classes"], feature_size=48, spatial_dims=3)
+    elif opt["model_name"] == "nnFormer":
+        model = nnFormer(crop_size=(160, 160, 96), input_channels=opt["in_channels"], num_classes=opt["classes"])
+
+    elif opt["model_name"] == "3DUXNet":
+        model = UXNET(
+            in_chans=opt["in_channels"],
+            out_chans=opt["classes"],
+            depths=[2, 2, 2, 2],
+            feat_size=[48, 96, 192, 384],
+            drop_path_rate=0,
+            layer_scale_init_value=1e-6,
+            spatial_dims=3,
+        )
 
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
@@ -182,23 +215,55 @@ def get_model(opt):
         model = DenseASPPUNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "UNETR":
-        model = UNETR(in_channels=opt["in_channels"], out_channels=opt["classes"], img_size=(160, 160, 96))
-
-    elif opt["model_name"] == "TransBTS":
-        model = BTS(img_dim=(160, 160, 96), patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
-                    embedding_dim=512,
-                    num_heads=8,
-                    num_layers=4,
-                    hidden_dim=4096,
-                    dropout_rate=0.1,
-                    attn_dropout_rate=0.1,
-                    conv_patch_representation=True,
-                    positional_encoding_type="learned",
-                    )
-
+        model = UNETR(
+            in_channels=opt["in_channels"],
+            out_channels=opt["classes"],
+            img_size=(160, 160, 96),
+            feature_size=16,
+            hidden_size=768,
+            mlp_dim=3072,
+            num_heads=12,
+            pos_embed="perceptron",
+            norm_name="instance",
+            res_block=True,
+            dropout_rate=0.0,
+        )
 
     elif opt["model_name"] == "SwinUNETR":
-        model = SwinUNETR(img_size=(160, 160, 96), in_channels=opt["in_channels"], out_channels=opt["classes"], feature_size=48, spatial_dims=3)
+        model = SwinUNETR(
+            img_size=(160, 160, 96),
+            in_channels=opt["in_channels"],
+            out_channels=opt["classes"],
+            feature_size=48,
+            use_checkpoint=False,
+        )
+
+    elif opt["model_name"] == "TransBTS":
+        model = BTS(
+            img_dim=(160, 160, 96), patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
+            embedding_dim=512,
+            num_heads=8,
+            num_layers=4,
+            hidden_dim=4096,
+            dropout_rate=0.1,
+            attn_dropout_rate=0.1,
+            conv_patch_representation=True,
+            positional_encoding_type="learned",
+        )
+
+    elif opt["model_name"] == "nnFormer":
+        model = nnFormer(crop_size=(160, 160, 96), input_channels=opt["in_channels"], num_classes=opt["classes"])
+
+    elif opt["model_name"] == "3DUXNet":
+        model = UXNET(
+            in_chans=opt["in_channels"],
+            out_chans=opt["classes"],
+            depths=[2, 2, 2, 2],
+            feat_size=[48, 96, 192, 384],
+            drop_path_rate=0,
+            layer_scale_init_value=1e-6,
+            spatial_dims=3,
+        )
 
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
