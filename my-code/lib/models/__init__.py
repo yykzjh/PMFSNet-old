@@ -22,9 +22,9 @@ from .DenseVoxelNet import DenseVoxelNet
 from .MultiResUNet3D import MultiResUNet3D
 from .DenseASPPUNet import DenseASPPUNet
 from .UNETR import UNETR
+from .TransBTS import BTS
 
 from .PMFSNet import PMFSNet
-
 
 
 def get_model_optimizer_lr_scheduler(opt):
@@ -62,19 +62,29 @@ def get_model_optimizer_lr_scheduler(opt):
     elif opt["model_name"] == "UNETR":
         model = UNETR(in_channels=opt["in_channels"], out_channels=opt["classes"], img_size=(160, 160, 96))
 
+    elif opt["model_name"] == "TransBTS":
+        model = BTS(img_dim=224, patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
+                    embedding_dim=512,
+                    num_heads=8,
+                    num_layers=4,
+                    hidden_dim=4096,
+                    dropout_rate=0.1,
+                    attn_dropout_rate=0.1,
+                    conv_patch_representation=True,
+                    positional_encoding_type="learned",
+                    )
+
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     else:
         raise RuntimeError(f"{opt['model_name']}是不支持的网络模型！")
 
-
     # 把模型放到GPU上
     model = model.to(opt["device"])
 
     # 随机初始化模型参数
     utils.init_weights(model, init_type="kaiming")
-
 
     # 初始化优化器
     if opt["optimizer_name"] == "SGD":
@@ -135,7 +145,6 @@ def get_model_optimizer_lr_scheduler(opt):
     return model, optimizer, lr_scheduler
 
 
-
 def get_model(opt):
     # 初始化网络模型
     if opt["model_name"] == "DenseVNet":
@@ -171,6 +180,18 @@ def get_model(opt):
     elif opt["model_name"] == "UNETR":
         model = UNETR(in_channels=opt["in_channels"], out_channels=opt["classes"], img_size=(160, 160, 96))
 
+    elif opt["model_name"] == "TransBTS":
+        model = BTS(img_dim=(160, 160, 96), patch_dim=8, num_channels=opt["in_channels"], num_classes=opt["classes"],
+                    embedding_dim=512,
+                    num_heads=8,
+                    num_layers=4,
+                    hidden_dim=4096,
+                    dropout_rate=0.1,
+                    attn_dropout_rate=0.1,
+                    conv_patch_representation=True,
+                    positional_encoding_type="learned",
+                    )
+
     elif opt["model_name"] == "PMRFNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
@@ -181,4 +202,3 @@ def get_model(opt):
     model = model.to(opt["device"])
 
     return model
-

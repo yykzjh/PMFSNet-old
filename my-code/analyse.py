@@ -336,7 +336,7 @@ def count_all_models_parameters(model_names_list):
     }
     # 遍历统计各个模型参数量
     for model_name in model_names_list:
-        if model_name != "PMRFNet":
+        if model_name != "TransBTS":
             continue
         # 获取当前模型
         opt["model_name"] = model_name
@@ -467,7 +467,7 @@ if __name__ == '__main__':
 
     # 统计所有网络模型的参数量
     count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-                                 "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet"])
+                                 "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "UNETR", "PMRFNet", "TransBTS"])
 
     # 生成牙齿数据集快照
     # generate_NC_release_data_snapshot(r"./datasets")
