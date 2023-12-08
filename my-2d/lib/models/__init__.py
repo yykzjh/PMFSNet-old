@@ -8,7 +8,7 @@ from .MobileNetV2 import MobileNetV2
 from .UNet import UNet
 from .MsRED import Ms_red_v1
 from .CKDNet import DeepLab_Aux
-from .BCDUNet import BCDU_net_D3
+from .BCDUNet import BCDUNet
 from .CANet import Comprehensive_Atten_Unet
 from .CENet import CE_Net
 from .CPFNet import CPF_Net
@@ -33,7 +33,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = DeepLab_Aux(num_classes=opt["classes"])
 
     elif opt["model_name"] == "BCDUNet":
-        model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
+        model = BCDUNet(output_dim=opt["classes"], input_dim=opt["in_channels"], frame_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CANet":
         model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"], out_size=opt["resize_shape"])
@@ -136,7 +136,7 @@ def get_model(opt):
         model = DeepLab_Aux(num_classes=opt["classes"])
 
     elif opt["model_name"] == "BCDUNet":
-        model = BCDU_net_D3(classes=opt["classes"], channels=opt["in_channels"])
+        model = BCDUNet(output_dim=opt["classes"], input_dim=opt["in_channels"], frame_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CANet":
         model = Comprehensive_Atten_Unet(in_ch=opt["in_channels"], n_classes=opt["classes"], out_size=opt["resize_shape"])
