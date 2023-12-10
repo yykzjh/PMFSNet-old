@@ -46,23 +46,23 @@ class PMFSNet(nn.Module):
                 )
             )
 
-        self.Global = global_module(
-            in_channels=downsample_channels,
-            max_pool_kernels=[4, 2, 1],
-            ch=48,
-            ch_k=48,
-            ch_v=48,
-            br=3
-        )
-
-        self.bottle_conv = ConvBlock(
-            in_channel=downsample_channels[2] + skip_channels[2],
-            out_channel=skip_channels[2],
-            kernel_size=3,
-            stride=1,
-            batch_norm=True,
-            preactivation=True,
-        )
+        # self.Global = global_module(
+        #     in_channels=downsample_channels,
+        #     max_pool_kernels=[4, 2, 1],
+        #     ch=48,
+        #     ch_k=48,
+        #     ch_v=48,
+        #     br=3
+        # )
+        #
+        # self.bottle_conv = ConvBlock(
+        #     in_channel=downsample_channels[2] + skip_channels[2],
+        #     out_channel=skip_channels[2],
+        #     kernel_size=3,
+        #     stride=1,
+        #     batch_norm=True,
+        #     preactivation=True,
+        # )
 
         self.upsample_1 = torch.nn.Upsample(scale_factor=2, mode='bilinear')
         self.upsample_2 = torch.nn.Upsample(scale_factor=4, mode='bilinear')
@@ -83,8 +83,8 @@ class PMFSNet(nn.Module):
         x2, skip2 = self.down_convs[1](x1)
         x3, skip3 = self.down_convs[2](x2)
 
-        x3 = self.Global([x1, x2, x3])
-        skip3 = self.bottle_conv(torch.cat([x3, skip3], dim=1))
+        # x3 = self.Global([x1, x2, x3])
+        # skip3 = self.bottle_conv(torch.cat([x3, skip3], dim=1))
 
         skip2 = self.upsample_1(skip2)
         skip3 = self.upsample_2(skip3)
