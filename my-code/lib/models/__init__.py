@@ -14,7 +14,7 @@ import lib.utils as utils
 from .DenseVNet import DenseVNet
 from .UNet3D import UNet3D
 from .VNet import VNet
-from .AttentionUNet import AttentionU_Net
+from .AttentionUNet3D import AttentionUNet3D
 from .R2UNet import R2U_Net
 from .R2AttentionUNet import R2AttentionU_Net
 from .HighResNet3D import HighResNet3D
@@ -40,8 +40,8 @@ def get_model_optimizer_lr_scheduler(opt):
     elif opt["model_name"] == "VNet":
         model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
-    elif opt["model_name"] == "AttentionUNet":
-        model = AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+    elif opt["model_name"] == "AttentionUNet3D":
+        model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "R2UNet":
         model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
@@ -193,8 +193,8 @@ def get_model(opt):
     elif opt["model_name"] == "VNet":
         model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
-    elif opt["model_name"] == "AttentionUNet":
-        model = AttentionU_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
+    elif opt["model_name"] == "AttentionUNet3D":
+        model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     elif opt["model_name"] == "R2UNet":
         model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
