@@ -53,8 +53,21 @@ class SurfaceOverlappingValues(object):
         # 判断预测图和真是标签图的维度大小是否一致
         assert seg.shape == target.shape, "seg和target的维度大小不一致"
         # 转换seg和target数据类型为整型
-        seg = seg.type(torch.uint8)
-        target = target.type(torch.uint8)
+        seg = seg.long()
+        target = target.long()
+
+        # 将分割图和标签图都进行one-hot处理
+        seg = expand_as_one_hot(seg, self.num_classes)
+        target = expand_as_one_hot(target, self.num_classes)
+
+        # 转换seg和target数据类型为布尔型
+        seg = seg.bool()
+        target = target.bool()
+
+        # 判断one-hot处理后标注图和分割图的维度是否都是5维
+        assert seg.dim() == target.dim() == 5, "one-hot处理后标注图和分割图的维度不是都为5维！"
+        # 判断one-hot处理后标注图和分割图的尺寸是否一致
+        assert seg.size() == target.size(), "one-hot处理后分割图和标注图的尺寸不一致！"
 
         return compute_per_channel_so(seg, target, self.num_classes, theta=self.theta)
 

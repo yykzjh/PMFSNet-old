@@ -26,9 +26,9 @@ params = {
 
     "cuda": True,  # 是否使用GPU
 
-    "benchmark": True,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
+    "benchmark": False,  # 为整个网络的每个卷积层搜索最适合它的卷积实现算法，进而实现网络的加速。用于网络输入维度和类型不会变的情况。
 
-    "deterministic": False,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
+    "deterministic": True,  # 固定cuda的随机数种子，每次返回的卷积算法将是确定的。用于复现模型结果
 
     # —————————————————————————————————————————————     预处理       ————————————————————————————————————————————————————
 
@@ -55,12 +55,12 @@ params = {
 
     "batch_size": 1,  # batch_size大小
 
-    "num_workers": 4,  # num_workers大小
+    "num_workers": 2,  # num_workers大小
 
     # —————————————————————————————————————————————    网络模型     ——————————————————————————————————————————————————————
 
-    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet", "R2UNet", "R2AttentionUNet",
-    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet", "PMRFNet"]
+    "model_name": "PMRFNet",  # 模型名称，可选["DenseVNet","UNet3D", "VNet", "AttentionUNet3D", "R2UNet", "R2AttentionUNet",
+    # "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "PMRFNet", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet"]
 
     "in_channels": 1,  # 模型最开始输入的通道数,即模态数
 
@@ -76,7 +76,7 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
-    "metric_names": ["DSC", "ASSD", "HD"],  # 采用除了dsc之外的评价指标，可选["DSC", "ASSD", "HD", "SO"]
+    "metric_names": ["DSC", "ASSD", "HD", "SO", "SD", "IoU"],  # 采用除了dsc之外的评价指标，可选["DSC", "ASSD", "HD", "SO", "SD", "IoU"]
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # 设置可用GPU
     os.environ["CUDA_VISIBLE_DEVICES"] = params["CUDA_VISIBLE_DEVICES"]
     # 随机种子、卷积算法优化
-    utils.reproducibility(params["seed"], params["cuda"], params["deterministic"], params["benchmark"])
+    utils.reproducibility(params["seed"], params["deterministic"], params["benchmark"])
 
     # 获取GPU设备
     if params["cuda"]:
