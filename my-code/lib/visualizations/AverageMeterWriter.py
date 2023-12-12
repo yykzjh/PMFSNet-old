@@ -2,6 +2,8 @@ import os
 import torch
 import numpy as np
 
+from lib import utils
+
 
 params = {
     # ——————————————————————————————————————————————     启动初始化    ———————————————————————————————————————————————————
@@ -174,6 +176,9 @@ class AverageMeterWriter(object):
                 value = self.statistics_dict[metric_name]["avg"] / self.statistics_dict["count"]
             print_info += "{:^12.6f}".format(value)
         print(print_info)
+        result_txt_path = os.path.join(self.opt["run_dir"], utils.datestr() + "_" + self.opt["model_name"] + ".txt")
+        utils.pre_write_txt(print_info, result_txt_path)
+
 
 
 
