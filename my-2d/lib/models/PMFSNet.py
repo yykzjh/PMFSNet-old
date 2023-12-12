@@ -26,9 +26,9 @@ class PMFSNet(nn.Module):
         super(PMFSNet, self).__init__()
 
         kernel_sizes = [5, 3, 3]
-        base_channels = [24, 48, 64]
-        skip_channels = [24, 48, 64]
-        units = [5, 10, 10]
+        base_channels = [24, 24, 24]
+        skip_channels = [12, 24, 24]
+        units = [3, 5, 5]
         growth_rates = [4, 8, 16]
         downsample_channels = [base_channels[i] + units[i] * growth_rates[i] for i in range(len(base_channels))]  # [44, 104, 184]
 
@@ -49,9 +49,9 @@ class PMFSNet(nn.Module):
         self.Global = global_module(
             in_channels=downsample_channels,
             max_pool_kernels=[4, 2, 1],
-            ch=64,
-            ch_k=64,
-            ch_v=64,
+            ch=48,
+            ch_k=48,
+            ch_v=48,
             br=3
         )
 
