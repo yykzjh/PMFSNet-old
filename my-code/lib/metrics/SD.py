@@ -59,6 +59,8 @@ class SurfaceDice(object):
         # 将分割图和标签图都进行one-hot处理
         seg = expand_as_one_hot(seg, self.num_classes)
         target = expand_as_one_hot(target, self.num_classes)
+        # seg用具体数值表示
+        seg = seg * input
 
         # 转换seg和target数据类型为布尔型
         seg = seg.bool()
