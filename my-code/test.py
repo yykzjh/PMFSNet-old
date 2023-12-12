@@ -76,7 +76,7 @@ params = {
 
     # ————————————————————————————————————————————    损失函数     ———————————————————————————————————————————————————————
 
-    "metric_names": ["DSC", "ASSD", "HD", "SO", "SD", "IoU"],  # 采用除了dsc之外的评价指标，可选["DSC", "ASSD", "HD", "SO", "SD", "IoU"]
+    "metric_names": ["HD", "ASSD", "IoU", "SO", "SD", "DSC"],  # 采用除了dsc之外的评价指标，可选["DSC", "ASSD", "HD", "SO", "SD", "IoU"]
 
     "sigmoid_normalization": False,  # 对网络输出的各通道进行归一化的方式,True是对各元素进行sigmoid,False是对所有通道进行softmax
 
