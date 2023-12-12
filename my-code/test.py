@@ -51,7 +51,7 @@ params = {
 
     "dataset_name": "NCTooth",  # 数据集名称， 可选["NCTooth", ]
 
-    "dataset_path": r"./datasets/NC-release-data-checked",  # 数据集路径
+    "dataset_path": r"../../PMFS-Net/my-code/datasets/NC-release-data-checked",  # 数据集路径
 
     "batch_size": 1,  # batch_size大小
 
