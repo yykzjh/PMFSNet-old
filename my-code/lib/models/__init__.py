@@ -111,7 +111,7 @@ def get_model_optimizer_lr_scheduler(opt):
             spatial_dims=3,
         )
 
-    elif opt["model_name"] == "PMRFNet":
+    elif opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     else:
@@ -265,7 +265,7 @@ def get_model(opt):
             spatial_dims=3,
         )
 
-    elif opt["model_name"] == "PMRFNet":
+    elif opt["model_name"] == "PMFSNet":
         model = PMFSNet(in_channels=opt["in_channels"], out_channels=opt["classes"])
 
     else:
