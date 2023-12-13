@@ -1,8 +1,15 @@
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../"))
+
 import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
+
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP_Separate
 
 
 class BCDUNet(nn.Module):
@@ -33,6 +40,15 @@ class BCDUNet(nn.Module):
         self.conv3 = conv_block(num_filter * 2, num_filter * 4)
         self.conv4 = conv_block(num_filter * 4, num_filter * 8)
 
+        self.Global = GlobalPMFSBlock_AP_Separate(
+            in_channels=[64, 128, 256, 512],
+            max_pool_kernels=[4, 2, 1, 1],
+            ch=64,
+            ch_k=64,
+            ch_v=64,
+            br=4
+        )
+
         self.upconv3 = nn.ConvTranspose2d(num_filter * 8, num_filter * 4, kernel_size=2, stride=2)
         self.upconv2 = nn.ConvTranspose2d(num_filter * 4, num_filter * 2, kernel_size=2, stride=2)
         self.upconv1 = nn.ConvTranspose2d(num_filter * 2, num_filter, kernel_size=2, stride=2)
@@ -61,6 +77,8 @@ class BCDUNet(nn.Module):
         conv3 = self.conv3(pool2)
         pool3 = self.maxpool(conv3)
         conv4 = self.conv4(pool3)
+
+        conv4 = self.Global([pool1, pool2, pool3, conv4])
 
         upconv3 = self.upconv3(conv4)
         concat3 = torch.cat((conv3, upconv3), 1)
@@ -181,8 +199,10 @@ class ConvBLSTM(nn.Module):
 
 
 if __name__ == '__main__':
-    x = torch.rand((1, 3, 224, 224))
-    model = BCDUNet(input_dim=3, output_dim=2, frame_size=(224, 224))
+    x = torch.rand((1, 3, 224, 224)).to("cuda:0")
+
+    model = BCDUNet(input_dim=3, output_dim=2, frame_size=(224, 224)).to("cuda:0")
+
     y = model(x)
 
     print(x.size())

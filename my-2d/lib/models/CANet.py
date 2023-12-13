@@ -1,3 +1,8 @@
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../"))
+
 import torch
 import torch.nn as nn
 
@@ -8,6 +13,8 @@ from lib.models.modules.scale_attention_layer import scale_atten_convblock
 from lib.models.modules.nonlocal_layer import NONLocalBlock2D
 import numpy as np
 from scipy import ndimage
+
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP_Separate
 
 
 class Comprehensive_Atten_Unet(nn.Module):
@@ -38,6 +45,15 @@ class Comprehensive_Atten_Unet(nn.Module):
         self.maxpool4 = nn.MaxPool2d(kernel_size=(2, 2))
 
         self.center = conv_block(filters[3], filters[4], drop_out=True)
+
+        self.Global = GlobalPMFSBlock_AP_Separate(
+            in_channels=[16, 32, 64, 128, 256],
+            max_pool_kernels=[8, 4, 2, 1, 1],
+            ch=64,
+            ch_k=64,
+            ch_v=64,
+            br=5
+        )
 
         # attention blocks
         # self.attentionblock1 = GridAttentionBlock2D(in_channels=filters[0], gating_channels=filters[1],
@@ -70,14 +86,14 @@ class Comprehensive_Atten_Unet(nn.Module):
 
     def forward(self, inputs):
         # Feature Extraction
-        conv1 = self.conv1(inputs) # [16, 3, 224, 300]-->[16, 16, 224, 300]
-        maxpool1 = self.maxpool1(conv1) # [16, 16, 112, 150]
+        conv1 = self.conv1(inputs)  # [16, 3, 224, 300]-->[16, 16, 224, 300]
+        maxpool1 = self.maxpool1(conv1)  # [16, 16, 112, 150]
 
-        conv2 = self.conv2(maxpool1) # [16, 32, 112, 150]
+        conv2 = self.conv2(maxpool1)  # [16, 32, 112, 150]
         maxpool2 = self.maxpool2(conv2)  # [16, 32, 56, 75]
 
         conv3 = self.conv3(maxpool2)  # [16, 64, 56, 75]
-        maxpool3 = self.maxpool3(conv3)   # [16, 64, 28, 37]
+        maxpool3 = self.maxpool3(conv3)  # [16, 64, 28, 37]
 
         conv4 = self.conv4(maxpool3)  # [16, 128, 28, 37]
         maxpool4 = self.maxpool4(conv4)  # [16, 128, 14, 18]
@@ -85,35 +101,36 @@ class Comprehensive_Atten_Unet(nn.Module):
         # Gating Signal Generation
         center = self.center(maxpool4)  # [16, 256, 14, 18]
 
+        center = self.Global([maxpool1, maxpool2, maxpool3, maxpool4, center])
+
         # Attention Mechanism
         # Upscaling Part (Decoder)
         up4 = self.up_concat4(conv4, center)  # [16, 256, 28, 37]
         g_conv4 = self.nonlocal4_2(up4)  # [16, 256, 28, 37]
 
-        up4, att_weight4 = self.up4(g_conv4) # [16, 128, 28, 37]
-        g_conv3, att3 = self.attentionblock3(conv3, up4) # [16, 64, 56, 75]
+        up4, att_weight4 = self.up4(g_conv4)  # [16, 128, 28, 37]
+        g_conv3, att3 = self.attentionblock3(conv3, up4)  # [16, 64, 56, 75]
 
         atten3_map = att3.cpu().detach().numpy().astype(float)
         atten3_map = ndimage.interpolation.zoom(atten3_map, [1.0, 1.0, self.out_size[0] / atten3_map.shape[2],
                                                              self.out_size[1] / atten3_map.shape[3]], order=0)
 
-
         up3 = self.up_concat3(g_conv3, up4)
         up3, att_weight3 = self.up3(up3)  # [16, 64, 56, 75]
-        g_conv2, att2 = self.attentionblock2(conv2, up3) # [16, 32, 112, 150]
+        g_conv2, att2 = self.attentionblock2(conv2, up3)  # [16, 32, 112, 150]
 
         atten2_map = att2.cpu().detach().numpy().astype(float)
         atten2_map = ndimage.interpolation.zoom(atten2_map, [1.0, 1.0, self.out_size[0] / atten2_map.shape[2],
-                                                              self.out_size[1] / atten2_map.shape[3]], order=0)
+                                                             self.out_size[1] / atten2_map.shape[3]], order=0)
 
-        up2 = self.up_concat2(g_conv2, up3)  
+        up2 = self.up_concat2(g_conv2, up3)
         up2, att_weight2 = self.up2(up2)  # [16, 32, 112, 150]
         # g_conv1, att1 = self.attentionblock1(conv1, up2)
 
         # atten1_map = att1.cpu().detach().numpy().astype(float)
         # atten1_map = ndimage.interpolation.zoom(atten1_map, [1.0, 1.0, 224 / atten1_map.shape[2],
         #                                                      300 / atten1_map.shape[3]], order=0)
-        up1 = self.up_concat1(conv1, up2)  
+        up1 = self.up_concat1(conv1, up2)
         up1, att_weight1 = self.up1(up1)  # [16, 16, 224, 300]
 
         # Deep Supervision
@@ -127,3 +144,14 @@ class Comprehensive_Atten_Unet(nn.Module):
         out = self.final(out)
 
         return out
+
+
+if __name__ == '__main__':
+    x = torch.rand((1, 3, 224, 224)).to("cuda:0")
+
+    model = Comprehensive_Atten_Unet(in_ch=3, n_classes=2).to("cuda:0")
+
+    y = model(x)
+
+    print(x.size())
+    print(y.size())

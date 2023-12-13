@@ -9,12 +9,17 @@
 """
 Ms RED network.
 """
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../"))
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from lib.models.modules.modules import UnetDsv3
 from lib.models.modules.scale_attention_layer_softpool import scale_atten_convblock_softpool
 
+from lib.models.modules.GlobalPMFSBlock import GlobalPMFSBlock_AP_Separate
 
 
 class Ms_red_v1(nn.Module):
@@ -31,6 +36,16 @@ class Ms_red_v1(nn.Module):
         self.encoder3 = RFB_hs(128, 256)
         self.encoder4 = RFB_hs_att(256, 512)
         self.downsample = downsample_soft()
+
+        self.Global = GlobalPMFSBlock_AP_Separate(
+            in_channels=[32, 64, 128, 256, 512],
+            max_pool_kernels=[8, 4, 2, 1, 1],
+            ch=64,
+            ch_k=64,
+            ch_v=64,
+            br=5
+        )
+
         self.affinity_attention = AffinityAttention(512)
         # self.affinity_attention = AffinityAttention_2(512)
         # self.attention_fuse = nn.Conv2d(512 * 2, 512, kernel_size=1)
@@ -67,6 +82,8 @@ class Ms_red_v1(nn.Module):
         down4 = self.downsample(fused1)  # [16, 256, 14, 20]
 
         input_feature = self.encoder4(down4)  # [16, 512, 14, 18]
+
+        input_feature = self.Global([down1, down2, down3, down4, input_feature])
 
         # Do Attenttion operations here
         attention = self.affinity_attention(input_feature)  # [16, 512, 14, 18]
@@ -979,3 +996,12 @@ class scale_ddw(nn.Module):
         return level_0_resized, level_1_resized, level_2_resized, level_3_resized
 
 
+if __name__ == '__main__':
+    x = torch.rand((1, 3, 224, 224)).to("cuda:0")
+
+    model = Ms_red_v1(classes=2, channels=3, out_size=(224, 224)).to("cuda:0")
+
+    y = model(x)
+
+    print(x.size())
+    print(y.size())
