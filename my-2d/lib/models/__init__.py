@@ -27,7 +27,7 @@ def get_model_optimizer_lr_scheduler(opt):
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "MsRED":
-        model = Ms_red_v2(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CKDNet":
         model = DeepLab_Aux(num_classes=opt["classes"])
@@ -130,7 +130,7 @@ def get_model(opt):
         model = UNet(n_channels=opt["in_channels"], n_classes=opt["classes"])
 
     elif opt["model_name"] == "MsRED":
-        model = Ms_red_v2(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
+        model = Ms_red_v1(classes=opt["classes"], channels=opt["in_channels"], out_size=opt["resize_shape"])
 
     elif opt["model_name"] == "CKDNet":
         model = DeepLab_Aux(num_classes=opt["classes"])
