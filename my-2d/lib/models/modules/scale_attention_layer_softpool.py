@@ -102,11 +102,11 @@ class ChannelGate(nn.Module):
             else:
                 channel_att_sum = channel_att_sum + channel_att_raw
 
-        # scalecoe = F.sigmoid(channel_att_sum)
+        # scalecoe = torch.sigmoid(channel_att_sum)
         channel_att_sum = channel_att_sum.reshape(channel_att_sum.shape[0], 4, 4)
         avg_weight = torch.mean(channel_att_sum, dim=2).unsqueeze(2)
         avg_weight = avg_weight.expand(channel_att_sum.shape[0], 4, 4).reshape(channel_att_sum.shape[0], 16)
-        scale = F.sigmoid(avg_weight).unsqueeze(2).unsqueeze(3).expand_as(x)
+        scale = torch.sigmoid(avg_weight).unsqueeze(2).unsqueeze(3).expand_as(x)
 
         return x * scale, scale
 
@@ -133,7 +133,7 @@ class SpatialGate(nn.Module):
     def forward(self, x):
         x_compress = self.compress(x)
         x_out = self.spatial(x_compress)
-        scale = F.sigmoid(x_out)  # broadcasting
+        scale = torch.sigmoid(x_out)  # broadcasting
         # spa_scale = scale.expand_as(x)
         # print(spa_scale.shape)
         return x * scale, scale
@@ -151,7 +151,7 @@ class SpatialAtten(nn.Module):
         residual = x
         x_out = self.conv1(x)
         x_out = self.conv2(x_out)
-        spatial_att = F.sigmoid(x_out).unsqueeze(4).permute(0, 1, 4, 2, 3)
+        spatial_att = torch.sigmoid(x_out).unsqueeze(4).permute(0, 1, 4, 2, 3)
         spatial_att = spatial_att.expand(spatial_att.shape[0], 4, 4, spatial_att.shape[3], spatial_att.shape[4]).reshape(
             spatial_att.shape[0], 16, spatial_att.shape[3], spatial_att.shape[4])
         x_out = residual * spatial_att
