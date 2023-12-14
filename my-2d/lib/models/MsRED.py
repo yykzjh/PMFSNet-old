@@ -134,6 +134,16 @@ class Ms_red_v2(nn.Module):
         self.encoder3 = RFB7a_hs(128, 256)
         self.encoder4 = RFB7a_hs_att(256, 512)
         self.downsample = downsample_soft()
+
+        self.Global = GlobalPMFSBlock_AP_Separate(
+            in_channels=[32, 64, 128, 256, 512],
+            max_pool_kernels=[8, 4, 2, 1, 1],
+            ch=64,
+            ch_k=64,
+            ch_v=64,
+            br=5
+        )
+
         self.affinity_attention = AffinityAttention(512)
         # self.affinity_attention = AffinityAttention_2(512)
         # self.attention_fuse = nn.Conv2d(512 * 2, 512, kernel_size=1)
@@ -176,6 +186,8 @@ class Ms_red_v2(nn.Module):
 
         # attention_fuse = self.attention_fuse(torch.cat((input_feature, attention), dim=1))
         attention_fuse = input_feature + attention  # [16, 512, 14, 18]
+
+        attention_fuse = self.Global([down1, down2, down3, down4, attention_fuse])
 
         # Do decoder operations here
         up4 = self.deconv4(attention_fuse)  # [16, 256, 28, 36]
