@@ -187,7 +187,7 @@ def analyse_models(model_names_list):
     }
     # 遍历统计各个模型参数量
     for model_name in model_names_list:
-        if model_name != "PMFSNet":
+        if model_name != "MsRED":
             continue
         # 获取当前模型
         opt["model_name"] = model_name

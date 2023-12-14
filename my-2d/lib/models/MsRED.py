@@ -120,6 +120,92 @@ class Ms_red_v1(nn.Module):
         return out
 
 
+class Ms_red_v2(nn.Module):
+    def __init__(self, classes, channels, out_size=(224, 224)):
+        """
+        :param classes: the object classes number.
+        :param channels: the channels of the input image.
+        """
+        super(Ms_red_v2, self).__init__()
+        self.out_size = out_size
+        self.enc_input = ResEncoder_hs(channels, 32)
+        self.encoder1 = RFB7a_hs(32, 64)
+        self.encoder2 = RFB7a_hs(64, 128)
+        self.encoder3 = RFB7a_hs(128, 256)
+        self.encoder4 = RFB7a_hs_att(256, 512)
+        self.downsample = downsample_soft()
+        self.affinity_attention = AffinityAttention(512)
+        # self.affinity_attention = AffinityAttention_2(512)
+        # self.attention_fuse = nn.Conv2d(512 * 2, 512, kernel_size=1)
+        self.decoder4 = RFB7a_hs_att(512, 256)
+        self.decoder3 = RFB7a_hs(256, 128)
+        self.decoder2 = RFB7a_hs(128, 64)
+        self.decoder1 = RFB7a_hs(64, 32)
+        self.deconv4 = deconv(512, 256)
+        self.deconv3 = deconv(256, 128)
+        self.deconv2 = deconv(128, 64)
+        self.deconv1 = deconv(64, 32)
+
+        self.assf_fusion4 = ASFF_ddw(level=0)
+
+        self.dsv4 = UnetDsv3(in_size=256, out_size=4, scale_factor=self.out_size)
+        self.dsv3 = UnetDsv3(in_size=128, out_size=4, scale_factor=self.out_size)
+        self.dsv2 = UnetDsv3(in_size=64, out_size=4, scale_factor=self.out_size)
+        self.dsv1 = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
+        self.scale_att = scale_atten_convblock_softpool(in_size=16, out_size=4)
+        self.final = nn.Conv2d(4, classes, kernel_size=1)
+
+    def forward(self, x):
+        enc_input = self.enc_input(x)  # [16, 3, 224, 320]-->[16, 32, 224, 320]
+        down1 = self.downsample(enc_input)  # [16, 32, 112, 160]
+
+        enc1 = self.encoder1(down1)  # [16, 64, 112, 160]
+        down2 = self.downsample(enc1)  # [16, 64, 56, 80]
+
+        enc2 = self.encoder2(down2)  # [16, 128, 56, 80]
+        down3 = self.downsample(enc2)  # [16, 128, 28, 40]
+
+        enc3 = self.encoder3(down3)  # [16, 256, 28, 40]
+        fused1 = self.assf_fusion4(enc3, enc2, enc1, enc_input)
+        down4 = self.downsample(fused1)  # [16, 256, 14, 20]
+
+        input_feature = self.encoder4(down4)  # [16, 512, 14, 18]
+
+        # Do Attenttion operations here
+        attention = self.affinity_attention(input_feature)  # [16, 512, 14, 18]
+
+        # attention_fuse = self.attention_fuse(torch.cat((input_feature, attention), dim=1))
+        attention_fuse = input_feature + attention  # [16, 512, 14, 18]
+
+        # Do decoder operations here
+        up4 = self.deconv4(attention_fuse)  # [16, 256, 28, 36]
+        up4 = torch.cat((enc3, up4), dim=1)
+        dec4 = self.decoder4(up4)
+
+        up3 = self.deconv3(dec4)
+        up3 = torch.cat((enc2, up3), dim=1)
+        dec3 = self.decoder3(up3)
+
+        up2 = self.deconv2(dec3)
+        up2 = torch.cat((enc1, up2), dim=1)
+        dec2 = self.decoder2(up2)
+
+        up1 = self.deconv1(dec2)
+        up1 = torch.cat((enc_input, up1), dim=1)
+        dec1 = self.decoder1(up1)
+
+        dsv4 = self.dsv4(dec4)  # [16, 4, 224, 320]
+        dsv3 = self.dsv3(dec3)
+        dsv2 = self.dsv2(dec2)
+        dsv1 = self.dsv1(dec1)
+        dsv_cat = torch.cat([dsv1, dsv2, dsv3, dsv4], dim=1)  # [16, 16, 224, 320]
+        out = self.scale_att(dsv_cat)  # [16, 4, 224, 300]
+
+        out = self.final(out)
+
+        return out
+
+
 def downsample():
     return nn.MaxPool2d(kernel_size=2, stride=2)
 
@@ -998,7 +1084,7 @@ class scale_ddw(nn.Module):
 if __name__ == '__main__':
     x = torch.rand((1, 3, 224, 224)).to("cuda:0")
 
-    model = Ms_red_v1(classes=2, channels=3, out_size=(224, 224)).to("cuda:0")
+    model = Ms_red_v2(classes=2, channels=3, out_size=(224, 224)).to("cuda:0")
 
     y = model(x)
 
