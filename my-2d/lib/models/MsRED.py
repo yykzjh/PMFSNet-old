@@ -83,13 +83,13 @@ class Ms_red_v1(nn.Module):
 
         input_feature = self.encoder4(down4)  # [16, 512, 14, 18]
 
-        input_feature = self.Global([down1, down2, down3, down4, input_feature])
-
         # Do Attenttion operations here
         attention = self.affinity_attention(input_feature)  # [16, 512, 14, 18]
 
         # attention_fuse = self.attention_fuse(torch.cat((input_feature, attention), dim=1))
         attention_fuse = input_feature + attention  # [16, 512, 14, 18]
+
+        attention_fuse = self.Global([down1, down2, down3, down4, attention_fuse])
 
         # Do decoder operations here
         up4 = self.deconv4(attention_fuse)  # [16, 256, 28, 36]
@@ -117,8 +117,7 @@ class Ms_red_v1(nn.Module):
 
         out = self.final(out)
 
-        final = F.sigmoid(out)
-        return final
+        return out
 
 
 def downsample():
