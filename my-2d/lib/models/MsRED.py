@@ -117,7 +117,8 @@ class Ms_red_v1(nn.Module):
 
         out = self.final(out)
 
-        return out
+        final = torch.sigmoid(out)
+        return final
 
 
 class Ms_red_v2(nn.Module):
@@ -215,7 +216,8 @@ class Ms_red_v2(nn.Module):
 
         out = self.final(out)
 
-        return out
+        final = torch.sigmoid(out)
+        return final
 
 
 def downsample():
