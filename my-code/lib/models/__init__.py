@@ -25,6 +25,7 @@ from .TransBTS import BTS
 from monai.networks.nets import UNETR, SwinUNETR
 from lib.models.nnFormer.nnFormer_seg import nnFormer
 from lib.models.UXNet_3D.network_backbone import UXNET
+from monai.networks.nets import AttentionUnet
 
 from .PMFSNet import PMFSNet
 
@@ -41,7 +42,8 @@ def get_model_optimizer_lr_scheduler(opt):
         model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "AttentionUNet3D":
-        model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
+        # model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
+        model = AttentionUnet(spatial_dims=3, in_channels=opt["in_channels"], out_channels=opt["classes"], channels=(64, 128, 256, 512, 1024), strides=(2, 2, 2, 2))
 
     elif opt["model_name"] == "R2UNet":
         model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
@@ -194,7 +196,8 @@ def get_model(opt):
         model = VNet(in_channels=opt["in_channels"], classes=opt["classes"])
 
     elif opt["model_name"] == "AttentionUNet3D":
-        model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
+        # model = AttentionUNet3D(in_channels=opt["in_channels"], out_channels=opt["classes"])
+        model = AttentionUnet(spatial_dims=3, in_channels=opt["in_channels"], out_channels=opt["classes"], channels=(64, 128, 256, 512, 1024), strides=(2, 2, 2, 2))
 
     elif opt["model_name"] == "R2UNet":
         model = R2U_Net(in_channels=opt["in_channels"], out_channels=opt["classes"])
