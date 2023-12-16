@@ -243,12 +243,12 @@ def generate_samples_image(scale=2):
     # 依次遍历
     for i in range(4):
         x_img, y_img = i * (224 + 8), 0
-        img = cv2.imread(r"./images/" + str(i) + "0" + ".JPG")
+        img = cv2.imread(r"./images/MMOTU/" + str(i) + "0" + ".JPG")
         img = cv2.resize(img, (360, 224))
         image[x_img: x_img + 224, y_img: y_img + 360, :] = img
 
         x_lab, y_lab = i * (224 + 8), 365
-        lab = cv2.imread(r"./images/" + str(i) + "1" + ".PNG")
+        lab = cv2.imread(r"./images/MMOTU/" + str(i) + "1" + ".PNG")
         lab = cv2.resize(lab, (360, 224)) * 255
         image[x_lab: x_lab + 224, y_lab: y_lab + 360, :] = lab
 
@@ -271,7 +271,7 @@ def generate_samples_image(scale=2):
     w, h = image.size
     image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
     print(image.size)
-    image.save(r"./images/MMOTU_samples.jpg")
+    image.save(r"./images/MMOTU/MMOTU_samples.jpg")
 
 
 
