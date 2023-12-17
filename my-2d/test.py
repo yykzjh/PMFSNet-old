@@ -144,6 +144,7 @@ def generate_segment_result_images(model_names):
             image_path = os.path.join(r"./images/ISIC2018_segment_result", str(i) + "0.jpg")
             label_path = os.path.join(r"./images/ISIC2018_segment_result", str(i) + "1.png")
             segmented_display_image = segment_image(model, image_path, label_path)
+            segmented_display_image = segmented_display_image[:, :, ::-1]
             cv2.imwrite(os.path.join(r"./images/ISIC2018_segment_result", str(i) + str(j+2) + ".jpg"), segmented_display_image)
 
 
