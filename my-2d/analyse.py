@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 from PIL import Image, ImageDraw, ImageFont
+from skimage import metrics
 
 import torch
 from thop import profile
@@ -366,6 +367,37 @@ def generate_samples_image(scale=2):
 
 
 
+def find_most_similar_image(target_image_path):
+    target_image = cv2.imread(target_image_path)
+    target_image_gray = cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
+    root_dir = './datasets/ISIC2018'
+    subdirs = ["train", "valid", "test"]
+    max_ssim_score = -1.0
+    similar_image_path = None
+
+    for subdir_name in subdirs:
+        sub_dir = os.path.join(root_dir, subdir_name)
+        images_dir = os.path.join(sub_dir, "images")
+        for src_image_name in tqdm(os.listdir(images_dir)):
+            src_image_path = os.path.join(images_dir, src_image_name)
+            src_image = cv2.imread(src_image_path)
+            src_image = cv2.resize(src_image, (target_image.shape[1], target_image.shape[0]), interpolation=cv2.INTER_AREA)
+            src_image_gray = cv2.cvtColor(src_image, cv2.COLOR_BGR2GRAY)
+            ssim_score = metrics.structural_similarity(src_image_gray, target_image_gray)
+            if ssim_score > max_ssim_score:
+                max_ssim_score = ssim_score
+                similar_image_path = src_image_path
+
+    if similar_image_path is not None:
+        print(similar_image_path)
+    else:
+        print("err")
+
+
+
+
+
+
 
 
 
@@ -384,7 +416,7 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
+    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
     # 分析ISIC2018数据集均值和标准差
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
@@ -397,5 +429,8 @@ if __name__ == '__main__':
 
     # 生成ISIC 2018数据集图像样本展示图
     # generate_samples_image(scale=2)
+
+    # 从ISIC 2018数据集中找出与指定图像最相似的图像
+    find_most_similar_image(r"./images/ISIC2018_segment_result/target_3.jpg")
 
 
