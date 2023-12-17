@@ -101,7 +101,7 @@ def segment_image(model, image_path, label_path):
     red[:, :, 0] = 255
     green = np.zeros((224, 224, 3))
     green[:, :, 1] = 255
-    white = np.ones((224, 224, 3))
+    white = np.ones((224, 224, 3)) * 255
     segmented_display_image = np.zeros((224, 224, 3))
     segmented_display_image = np.where(seg_image & label, white, segmented_display_image)
     segmented_display_image = np.where(seg_image & ~label, red, segmented_display_image)
