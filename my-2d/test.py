@@ -133,13 +133,10 @@ def generate_segment_result_images(model_names):
         pretrain_state_dict = torch.load(params["pretrain"], map_location=lambda storage, loc: storage.cuda(params["device"]))
         model_state_dict = model.state_dict()
         load_count = 0  # 成功加载参数计数
-        print(pretrain_state_dict.keys())
         for param_name in model_state_dict.keys():
             if (param_name in pretrain_state_dict) and (model_state_dict[param_name].size() == pretrain_state_dict[param_name].size()):
                 model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
                 load_count += 1
-            else:
-                print(param_name)
         model.load_state_dict(model_state_dict, strict=True)
         print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
         # 遍历所有图
