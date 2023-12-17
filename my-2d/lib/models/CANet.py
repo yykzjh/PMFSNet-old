@@ -46,14 +46,14 @@ class Comprehensive_Atten_Unet(nn.Module):
 
         self.center = conv_block(filters[3], filters[4], drop_out=True)
 
-        self.Global = GlobalPMFSBlock_AP_Separate(
-            in_channels=[16, 32, 64, 128, 256],
-            max_pool_kernels=[8, 4, 2, 1, 1],
-            ch=64,
-            ch_k=64,
-            ch_v=64,
-            br=5
-        )
+        # self.Global = GlobalPMFSBlock_AP_Separate(
+        #     in_channels=[16, 32, 64, 128, 256],
+        #     max_pool_kernels=[8, 4, 2, 1, 1],
+        #     ch=64,
+        #     ch_k=64,
+        #     ch_v=64,
+        #     br=5
+        # )
 
         # attention blocks
         # self.attentionblock1 = GridAttentionBlock2D(in_channels=filters[0], gating_channels=filters[1],
@@ -101,7 +101,7 @@ class Comprehensive_Atten_Unet(nn.Module):
         # Gating Signal Generation
         center = self.center(maxpool4)  # [16, 256, 14, 18]
 
-        center = self.Global([maxpool1, maxpool2, maxpool3, maxpool4, center])
+        # center = self.Global([maxpool1, maxpool2, maxpool3, maxpool4, center])
 
         # Attention Mechanism
         # Upscaling Part (Decoder)

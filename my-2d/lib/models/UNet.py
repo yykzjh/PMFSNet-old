@@ -33,14 +33,14 @@ class UNet(nn.Module):
         factor = 2 if bilinear else 1
         self.down4 = (Down(512, 1024 // factor))
 
-        self.Global = GlobalPMFSBlock_AP_Separate(
-            in_channels=[64, 128, 256, 512, 1024],
-            max_pool_kernels=[16, 8, 4, 2, 1],
-            ch=64,
-            ch_k=64,
-            ch_v=64,
-            br=5
-        )
+        # self.Global = GlobalPMFSBlock_AP_Separate(
+        #     in_channels=[64, 128, 256, 512, 1024],
+        #     max_pool_kernels=[16, 8, 4, 2, 1],
+        #     ch=64,
+        #     ch_k=64,
+        #     ch_v=64,
+        #     br=5
+        # )
 
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
@@ -55,7 +55,7 @@ class UNet(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
 
-        x5 = self.Global([x1, x2, x3, x4, x5])
+        # x5 = self.Global([x1, x2, x3, x4, x5])
 
         x = self.up1(x5, x4)
         x = self.up2(x, x3)

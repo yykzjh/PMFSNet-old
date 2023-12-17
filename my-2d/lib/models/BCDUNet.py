@@ -40,14 +40,14 @@ class BCDUNet(nn.Module):
         self.conv3 = conv_block(num_filter * 2, num_filter * 4)
         self.conv4 = conv_block(num_filter * 4, num_filter * 8)
 
-        self.Global = GlobalPMFSBlock_AP_Separate(
-            in_channels=[64, 128, 256, 512],
-            max_pool_kernels=[4, 2, 1, 1],
-            ch=64,
-            ch_k=64,
-            ch_v=64,
-            br=4
-        )
+        # self.Global = GlobalPMFSBlock_AP_Separate(
+        #     in_channels=[64, 128, 256, 512],
+        #     max_pool_kernels=[4, 2, 1, 1],
+        #     ch=64,
+        #     ch_k=64,
+        #     ch_v=64,
+        #     br=4
+        # )
 
         self.upconv3 = nn.ConvTranspose2d(num_filter * 8, num_filter * 4, kernel_size=2, stride=2)
         self.upconv2 = nn.ConvTranspose2d(num_filter * 4, num_filter * 2, kernel_size=2, stride=2)
@@ -78,7 +78,7 @@ class BCDUNet(nn.Module):
         pool3 = self.maxpool(conv3)
         conv4 = self.conv4(pool3)
 
-        conv4 = self.Global([pool1, pool2, pool3, conv4])
+        # conv4 = self.Global([pool1, pool2, pool3, conv4])
 
         upconv3 = self.upconv3(conv4)
         concat3 = torch.cat((conv3, upconv3), 1)
