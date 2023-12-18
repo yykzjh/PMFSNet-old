@@ -394,7 +394,37 @@ def find_most_similar_image(target_image_path):
         print("err")
 
 
+def generate_segmented_sample_image(scale=1):
+    # 创建整个大图
+    image = np.full((976, 3290, 3), 255)
+    # 依次遍历
+    for i in range(4):
+        for j in range(10):
+            pos_x, pos_y = i * (224 + 10), j * (320 + 10)
+            img = cv2.imread(r"./images/ISIC2018_segment_result_samples/" + str(i) + "_{:02d}".format(j) + ".jpg")
+            img = cv2.resize(img, (320, 224))
+            image[pos_x: pos_x + 224, pos_y: pos_y + 320, :] = img
+    image = image[:, :, ::-1]
 
+    # 添加文字的设置
+    texts = ["Image", "Ground Truth", "U-Net", "AttU-Net", "CA-Net", "BCDU-Net", "CE-Net", "CPF-Net", "CKDNet", "PMFSNet"]
+    positions = [110, 390, 765, 1080, 1415, 1730, 2080, 2410, 2740, 3060]
+
+    image = Image.fromarray(np.uint8(image))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(r"C:\Windows\Fonts\times.ttf", 36)
+    color = (0, 0, 0)
+
+    # 遍历添加文字
+    for i, text in enumerate(texts):
+        position = (positions[i], 931)
+        draw.text(position, text, font=font, fill=color)
+
+    image.show()
+    w, h = image.size
+    image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
+    print(image.size)
+    image.save(r"./images/ISIC2018_segment_result_samples/ISIC2018_segmentation.jpg")
 
 
 
@@ -431,6 +461,9 @@ if __name__ == '__main__':
     # generate_samples_image(scale=2)
 
     # 从ISIC 2018数据集中找出与指定图像最相似的图像
-    find_most_similar_image(r"./images/ISIC2018_segment_result/target_3.jpg")
+    # find_most_similar_image(r"./images/ISIC2018_segment_result/target_3.jpg")
+
+    # 生成分割后样本拼接图
+    generate_segmented_sample_image(scale=1)
 
 
