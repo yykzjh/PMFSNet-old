@@ -12,6 +12,7 @@ from nibabel.viewers import OrthoSlicer3D
 
 from lib import utils
 from lib.visualizations.AverageMeterWriter import AverageMeterWriter
+import lib.transforms as transforms
 
 
 
@@ -51,6 +52,13 @@ class Tester():
 
 
     def test_single_image_without_label(self, image):
+        # 初始化数据变换
+        test_transforms = transforms.ComposeTransforms([
+            transforms.ClipAndShift(self.opt["clip_lower_bound"], self.opt["clip_upper_bound"]),
+            transforms.ToTensor(self.opt["clip_lower_bound"], self.opt["clip_upper_bound"]),
+            transforms.Normalize(self.opt["normalize_mean"], self.opt["normalize_std"])
+        ])
+        image, _ = test_transforms(image, None)
         self.model.eval()
 
         with torch.no_grad():
@@ -65,7 +73,9 @@ class Tester():
             # 根据各通道的概率，选择最大值所在的索引作为该处的类别
             class_map = torch.argmax(probability_map, dim=1).squeeze(0).cpu().numpy()
             # 显示
-            OrthoSlicer3D(class_map).show()
+            # OrthoSlicer3D(class_map).show()
+
+        return class_map
 
 
     def test_single_image(self, image, label):

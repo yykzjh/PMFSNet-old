@@ -27,10 +27,14 @@ class ToTensor(object):
         """
         # 转换为tensor
         img_tensor = torch.FloatTensor(np.ascontiguousarray(img_numpy))
-        label_tensor = torch.FloatTensor(np.ascontiguousarray(label))
         # 将图像灰度值归一化到0~1
         img_tensor = img_tensor / (self.upper_bound - self.lower_bound)
-        return img_tensor, label_tensor
+
+        if label is not None:
+            label_tensor = torch.FloatTensor(np.ascontiguousarray(label))
+            return img_tensor, label_tensor
+        else:
+            return img_tensor, label
 
 
 

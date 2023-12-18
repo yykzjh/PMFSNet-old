@@ -58,13 +58,13 @@ def compute_per_channel_hd(seg, target, num_classes):
             # 分别计算两个表面点集合中各点到对面集合的距离
             surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
                                                              spacing_mm=(1.0, 1.0, 1.0))
-            
+
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
                 continue
             # 计算一张图像一个类别的hd
             output[b, cla] = sd.compute_robust_hausdorff(surface_distances, 95)
     # 计算各类别在batch上的平均HD
-    out = torch.full((num_classes, ), -1.0)
+    out = torch.full((num_classes,), -1.0)
     for cla in range(num_classes):
         cnt = 0
         acc_sum = 0
@@ -95,17 +95,17 @@ def compute_per_channel_assd(seg, target, num_classes):
         for cla in range(num_classes):
             # 分别计算两个表面点集合中各点到对面集合的距离
             surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(), spacing_mm=(1.0, 1.0, 1.0))
-            
+
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
                 continue
             # 计算一张图像一个类别的assd
             assd_tuple = sd.compute_average_surface_distance(surface_distances)
             ASSD_per_class = ((assd_tuple[0] * len(surface_distances["distances_gt_to_pred"]) + assd_tuple[1] * len(surface_distances["distances_pred_to_gt"])) /
                               (len(surface_distances["distances_gt_to_pred"]) +
-                              len(surface_distances["distances_pred_to_gt"])))
+                               len(surface_distances["distances_pred_to_gt"])))
             output[b, cla] = ASSD_per_class
     # 计算各类别在batch上的平均ASSD
-    out = torch.full((num_classes, ), -1.0)
+    out = torch.full((num_classes,), -1.0)
     for cla in range(num_classes):
         cnt = 0
         acc_sum = 0
@@ -139,7 +139,7 @@ def compute_per_channel_so(seg, target, num_classes, theta=1.0):
             # 分别计算两个表面点集合中各点到对面集合的距离
             surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
                                                              spacing_mm=(1.0, 1.0, 1.0))
-            
+
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(
                     surface_distances["distances_gt_to_pred"]) == 0:
                 continue
@@ -181,7 +181,7 @@ def compute_per_channel_sd(seg, target, num_classes, theta=1.0):
             # 分别计算两个表面点集合中各点到对面集合的距离
             surface_distances = sd.compute_surface_distances(target[b, cla, ...].numpy(), seg[b, cla, ...].numpy(),
                                                              spacing_mm=(1.0, 1.0, 1.0))
-            
+
             if len(surface_distances["distances_pred_to_gt"]) == 0 or len(surface_distances["distances_gt_to_pred"]) == 0:
                 continue
             # 计算一张图像一个类别的sd
@@ -237,6 +237,56 @@ def compute_per_channel_iou(seg, target, num_classes):
     return out
 
 
+def cal_dsc(result, reference):
+    r"""
+    Dice coefficient
+
+    Computes the Dice coefficient (also known as Sorensen index) between the binary
+    objects in two images.
+
+    The metric is defined as
+
+    .. math::
+
+        DC=\frac{2|A\cap B|}{|A|+|B|}
+
+    , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).
+
+    Parameters
+    ----------
+    result : array_like
+        Input data containing objects. Can be any type but will be converted
+        into binary: background where 0, object everywhere else.
+    reference : array_like
+        Input data containing objects. Can be any type but will be converted
+        into binary: background where 0, object everywhere else.
+
+    Returns
+    -------
+    dc : float
+        The Dice coefficient between the object(s) in ```result``` and the
+        object(s) in ```reference```. It ranges from 0 (no overlap) to 1 (perfect overlap).
+
+    Notes
+    -----
+    This is a real metric. The binary images can therefore be supplied in any order.
+    """
+    result = np.atleast_1d(result.astype(bool))
+    reference = np.atleast_1d(reference.astype(bool))
+
+    intersection = np.count_nonzero(result & reference)
+
+    size_i1 = np.count_nonzero(result)
+    size_i2 = np.count_nonzero(reference)
+
+    try:
+        dc = 2. * intersection / (float(size_i1 + size_i2) + 1e-6)
+    except ZeroDivisionError:
+        dc = 0.0
+
+    return dc
+
+
 def flatten(tensor):
     """Flattens a given tensor such that the channel axis is first.
     The shapes are transformed as follows:
@@ -250,8 +300,3 @@ def flatten(tensor):
     transposed = tensor.permute(axis_order)
     # Flatten: (C, N, D, H, W) -> (C, N * D * H * W)
     return transposed.contiguous().view(C, -1)
-
-
-
-
-
