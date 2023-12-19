@@ -34,8 +34,6 @@ import lib.utils as utils
 import lib.models as models
 
 
-
-
 def load_nii_file(file_path):
     """
     底层读取.nii.gz文件
@@ -107,7 +105,7 @@ def split_dataset(dataset_dir, train_ratio=0.8, seed=123):
         # 复制原图
         shutil.copyfile(path, dest_image_path)
         src_label_path = path.replace("image", "label")
-        dest_label_path= os.path.join(train_dir, "labels", file_name)
+        dest_label_path = os.path.join(train_dir, "labels", file_name)
         # 复制标签图
         shutil.copyfile(src_label_path, dest_label_path)
     # 复制验证集
@@ -249,7 +247,6 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
     # 输出clip的上下界
     print("clip_lower_bound:{}, clip_upper_bound:{}".format(clip_lower_bound, clip_upper_bound))
 
-
     print("开始计算均值和方差->")
     # 初始化均值的加和
     mean_sum = 0
@@ -291,10 +288,9 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
 
     print("均值为:{}, 标准差为:{}".format(mean, std))
 
-
     print("开始计算每个类别的权重数组->")
     # 初始化统计数组
-    statistics_np = np.zeros((classes, ))
+    statistics_np = np.zeros((classes,))
     # 遍历所有图像
     for i in tqdm(range(len(images_list))):
         # 判断一下原图像文件名和标注图像文件名一致
@@ -311,7 +307,7 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
             statistics_np[class_index] += index_cnt
 
     # 初始化权重向量
-    weights = np.zeros((classes, ))
+    weights = np.zeros((classes,))
     # 依次计算每个类别的权重
     for i, cnt in enumerate(statistics_np):
         if cnt != 0:
@@ -326,6 +322,7 @@ def analyse_dataset(dataset_dir, resample_spacing=(0.5, 0.5, 0.5), clip_lower_bo
 def count_parameters(model):
     """计算PyTorch模型的参数数量"""
     return sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6
+
 
 def count_all_models_parameters(model_names_list):
     # 先构造参数字典
@@ -398,14 +395,13 @@ def compare_Dice():
 
     x = np.linspace(0, 1, 1000)
     y1 = 1 - ((2 * x) / (x + 1))
-    y2 = 1 - ((2 * x) / (x**2 + 1))
+    y2 = 1 - ((2 * x) / (x ** 2 + 1))
 
     plt.plot(x, y1, label="Standard Dice Loss")
     plt.plot(x, y2, label="Extended Dice Loss")
     plt.legend(fontsize=14)
     plt.xlabel("probability of ground truth class")
     plt.ylabel("loss")
-
 
     plt.savefig('loss.jpg', dpi=600, bbox_inches='tight')
 
@@ -448,6 +444,40 @@ def generate_samples_image(scale=2):
     image.save(r"./images/3D_CBCT_Tooth_samples.jpg")
 
 
+def generate_segmented_sample_image(scale=1):
+    # 创建整个大图
+    image = np.full((976, 4610, 3), 255)
+    # 依次遍历
+    for i in range(4):
+        for j in range(14):
+            pos_x, pos_y = i * (224 + 10), j * (320 + 10)
+            img = cv2.imread(r"./images/NC-release-data_segment_result_samples/" + str(i) + "_{:02d}".format(j) + ".jpg")
+            img = np.rot90(img, -1)
+            img = cv2.resize(img, (320, 224))
+            image[pos_x: pos_x + 224, pos_y: pos_y + 320, :] = img
+    image = image[:, :, ::-1]
+
+    # 添加文字的设置
+    texts = ["Image", "Ground Truth", "UNet3D", "VNet", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet", "PMFSNet"]
+    positions = [110, 390, 765, 1110, 1400, 1680, 2025, 2345, 2740, 3035, 3380, 3725, 4050, 4380]
+
+    image = Image.fromarray(np.uint8(image))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(r"C:\Windows\Fonts\times.ttf", 36)
+    color = (0, 0, 0)
+
+    # 遍历添加文字
+    for i, text in enumerate(texts):
+        position = (positions[i], 931)
+        draw.text(position, text, font=font, fill=color)
+
+    image.show()
+    w, h = image.size
+    image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
+    print(image.size)
+    image.save(r"./images/NC-release-data_segment_result_samples/3D_CBCT_Tooth_segmentation.jpg")
+
+
 
 
 
@@ -466,8 +496,8 @@ if __name__ == '__main__':
     # analyse_dataset(dataset_dir=r"./datasets/NC-release-data-checked", resample_spacing=[0.5, 0.5, 0.5], clip_lower_bound_ratio=1e-6, clip_upper_bound_ratio=1-1e-7)
 
     # 统计所有网络模型的参数量
-    count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet3D", "R2UNet", "R2AttentionUNet", "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "PMFSNet", "UNETR",
-                                 "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet"])
+    # count_all_models_parameters(["DenseVNet", "UNet3D", "VNet", "AttentionUNet3D", "R2UNet", "R2AttentionUNet", "HighResNet3D", "DenseVoxelNet", "MultiResUNet3D", "DenseASPPUNet", "PMFSNet", "UNETR",
+    #                              "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet"])
 
     # 生成牙齿数据集快照
     # generate_NC_release_data_snapshot(r"./datasets")
@@ -478,3 +508,5 @@ if __name__ == '__main__':
     # 生成牙齿数据集的样本展示图
     # generate_samples_image(scale=2)
 
+    # 生成分割后拼接图
+    generate_segmented_sample_image(scale=1)
