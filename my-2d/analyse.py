@@ -49,7 +49,6 @@ def analyse_MMOTU_annotations():
         else:
             shutil.copyfile(os.path.join(src_dir, image_name), os.path.join(dest_dir, image_name))
 
-
     for i in range(1, 1470):
         color_image_name = str(i) + ".PNG"
         binary_image_name = str(i) + "_binary.PNG"
@@ -222,7 +221,7 @@ def analyse_models(model_names_list):
 
         print("***************************************** model name: {} *****************************************".format(model_name))
 
-        print("params: {:.6f}M".format(count_parameters(model)/1e6))
+        print("params: {:.6f}M".format(count_parameters(model) / 1e6))
 
         input = torch.randn(1, 3, 224, 224).to(opt["device"])
         flops, params = profile(model, (input,))
@@ -274,6 +273,38 @@ def generate_samples_image(scale=2):
     image.save(r"./images/MMOTU/MMOTU_samples.jpg")
 
 
+def generate_segmented_sample_image(scale=1):
+    # 创建整个大图
+    image = np.full((976, 980, 3), 255)
+    # 依次遍历
+    for i in range(4):
+        for j in range(3):
+            pos_x, pos_y = i * (224 + 10), j * (320 + 10)
+            img = cv2.imread(r"./images/MMOTU_segment_result_samples/" + str(i) + "_" + str(j) + ".jpg")
+            img = cv2.resize(img, (320, 224))
+            image[pos_x: pos_x + 224, pos_y: pos_y + 320, :] = img
+    image = image[:, :, ::-1]
+
+    # 添加文字的设置
+    texts = ["Image", "Ground Truth", "PMFSNet"]
+    positions = [110, 390, 750]
+
+    image = Image.fromarray(np.uint8(image))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(r"C:\Windows\Fonts\times.ttf", 36)
+    color = (0, 0, 0)
+
+    # 遍历添加文字
+    for i, text in enumerate(texts):
+        position = (positions[i], 931)
+        draw.text(position, text, font=font, fill=color)
+
+    image.show()
+    w, h = image.size
+    image = image.resize((scale * w, scale * h), resample=Image.Resampling.BILINEAR)
+    print(image.size)
+    image.save(r"./images/MMOTU_segment_result_samples/MMOTU_segmentation.jpg")
+
 
 if __name__ == '__main__':
     # 分析标注文件数据
@@ -292,13 +323,10 @@ if __name__ == '__main__':
     # cal_max_valid_IoU(r"./log.txt")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "PSPNet", "DANet", "SegFormer", "UNet", "TransUNet", "BiSeNetV2", "MedT"])
+    # analyse_models(["PMFSNet", "MobileNetV2", "PSPNet", "DANet", "SegFormer", "UNet", "TransUNet", "BiSeNetV2", "MedT"])
 
     # 生成MMOTU样本展示图
     # generate_samples_image(scale=2)
 
-
-
-
-
-
+    # 生成分割后样本拼接图
+    generate_segmented_sample_image(scale=1)
