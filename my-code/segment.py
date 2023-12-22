@@ -190,4 +190,4 @@ def generate_segment_result_images(model_names):
 
 
 if __name__ == '__main__':
-    generate_segment_result_images(["UNet3D", "VNet", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet", "PMFSNet"])
+    generate_segment_result_images(["UNet3D", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet", "PMFSNet"])

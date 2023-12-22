@@ -446,11 +446,11 @@ def generate_samples_image(scale=2):
 
 def generate_segmented_sample_image(scale=1):
     # 创建整个大图
-    image = np.full((976, 4610, 3), 255)
+    image = np.full((976, 4340, 3), 255)
     # 依次遍历
     for i in range(4):
-        for j in range(14):
-            pos_x, pos_y = i * (224 + 10), j * (320 + 10)
+        for j in range(13):
+            pos_x, pos_y = i * (224 + 10), j * (320 + 10) + 60
             img = cv2.imread(r"./images/NC-release-data_segment_result_samples/" + str(i) + "_{:02d}".format(j) + ".jpg")
             img = np.rot90(img, -1)
             img = cv2.resize(img, (320, 224))
@@ -458,8 +458,10 @@ def generate_segmented_sample_image(scale=1):
     image = image[:, :, ::-1]
 
     # 添加文字的设置
-    texts = ["Image", "Ground Truth", "UNet3D", "VNet", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet", "PMFSNet"]
-    positions = [110, 390, 765, 1110, 1400, 1680, 2025, 2345, 2740, 3035, 3380, 3725, 4050, 4380]
+    col_names = ["Image", "Ground Truth", "UNet3D", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet", "PMFSNet"]
+    row_names = ["(a)", "(b)", "(c)", "(d)"]
+    col_positions = [170, 445, 820, 1125, 1410, 1755, 2075, 2470, 2765, 3110, 3455, 3780, 4110]
+    row_positions = [100, 334, 568, 802]
 
     image = Image.fromarray(np.uint8(image))
     draw = ImageDraw.Draw(image)
@@ -467,9 +469,12 @@ def generate_segmented_sample_image(scale=1):
     color = (0, 0, 0)
 
     # 遍历添加文字
-    for i, text in enumerate(texts):
-        position = (positions[i], 931)
+    for i, text in enumerate(col_names):
+        position = (col_positions[i], 931)
         draw.text(position, text, font=font, fill=color)
+    for i, text in enumerate(row_names):
+        position = (5, row_positions[i])
+        draw.text(position, text, font=font, fill=color, stroke_width=1)
 
     image.show()
     w, h = image.size
