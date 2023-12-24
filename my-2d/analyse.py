@@ -396,19 +396,21 @@ def find_most_similar_image(target_image_path):
 
 def generate_segmented_sample_image(scale=1):
     # 创建整个大图
-    image = np.full((976, 3290, 3), 255)
+    image = np.full((976, 3350, 3), 255)
     # 依次遍历
     for i in range(4):
         for j in range(10):
-            pos_x, pos_y = i * (224 + 10), j * (320 + 10)
+            pos_x, pos_y = i * (224 + 10), j * (320 + 10) + 60
             img = cv2.imread(r"./images/ISIC2018_segment_result_samples/" + str(i) + "_{:02d}".format(j) + ".jpg")
             img = cv2.resize(img, (320, 224))
             image[pos_x: pos_x + 224, pos_y: pos_y + 320, :] = img
     image = image[:, :, ::-1]
 
     # 添加文字的设置
-    texts = ["Image", "Ground Truth", "U-Net", "AttU-Net", "CA-Net", "BCDU-Net", "CE-Net", "CPF-Net", "CKDNet", "PMFSNet"]
-    positions = [110, 390, 765, 1080, 1415, 1730, 2080, 2410, 2740, 3060]
+    col_names = ["Image", "Ground Truth", "U-Net", "AttU-Net", "CA-Net", "BCDU-Net", "CE-Net", "CPF-Net", "CKDNet", "PMFSNet"]
+    row_names = ["(a)", "(b)", "(c)", "(d)"]
+    col_positions = [170, 450, 825, 1140, 1475, 1790, 2140, 2470, 2800, 3120]
+    row_positions = [100, 334, 568, 802]
 
     image = Image.fromarray(np.uint8(image))
     draw = ImageDraw.Draw(image)
@@ -416,9 +418,12 @@ def generate_segmented_sample_image(scale=1):
     color = (0, 0, 0)
 
     # 遍历添加文字
-    for i, text in enumerate(texts):
-        position = (positions[i], 931)
+    for i, text in enumerate(col_names):
+        position = (col_positions[i], 931)
         draw.text(position, text, font=font, fill=color)
+    for i, text in enumerate(row_names):
+        position = (5, row_positions[i])
+        draw.text(position, text, font=font, fill=color, stroke_width=1)
 
     image.show()
     w, h = image.size
