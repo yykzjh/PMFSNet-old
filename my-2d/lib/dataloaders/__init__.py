@@ -34,7 +34,7 @@ def get_test_dataloader(opt):
     :param opt: 参数字典
     :return:
     """
-    if opt["dataset_name"] == "NCTooth":
+    if opt["dataset_name"] == "MMOTU":
         # 初始化数据集
         valid_set = MMOTUDataset(opt, mode="valid")
 
