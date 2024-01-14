@@ -8,10 +8,13 @@
 """
 import os
 import glob
+import math
 import tqdm
 import shutil
 import random
+import cv2
 import numpy as np
+import pandas as pd
 import trimesh
 import json
 import torch
@@ -26,8 +29,9 @@ from nibabel.viewers import OrthoSlicer3D
 import SimpleITK as sitk
 from proplot import rc
 import matplotlib.pyplot as plt
-
-import cv2
+from matplotlib.lines import Line2D
+import proplot as pplt
+import seaborn as sns
 from PIL import Image, ImageDraw, ImageFont
 
 import lib.utils as utils
@@ -385,9 +389,9 @@ def compare_Dice():
     # 统一设置字体
     rc["font.family"] = "Times New Roman"
     # 统一设置轴刻度标签的字体大小
-    rc['tick.labelsize'] = 14
+    rc['tick.labelsize'] = 8
     # 统一设置xy轴名称的字体大小
-    rc["axes.labelsize"] = 16
+    rc["axes.labelsize"] = 10
     # 统一设置轴刻度标签的字体粗细
     rc["axes.labelweight"] = "light"
     # 统一设置xy轴名称的字体粗细
@@ -399,7 +403,7 @@ def compare_Dice():
 
     plt.plot(x, y1, label="Standard Dice Loss")
     plt.plot(x, y2, label="Extended Dice Loss")
-    plt.legend(fontsize=14)
+    plt.legend(fontsize=8)
     plt.xlabel("probability of ground truth class")
     plt.ylabel("loss")
 
@@ -483,6 +487,56 @@ def generate_segmented_sample_image(scale=1):
     image.save(r"./images/NC-release-data_segment_result_samples/3D_CBCT_Tooth_segmentation.jpg")
 
 
+def generate_bubble_image():
+
+    def circle_area_func(x, p=75, k=150):
+        return np.where(x < p, (np.sqrt(x / p) * p) * k, x * k)
+
+    def inverse_circle_area_func(x, p=75, k=150):
+        return np.where(x < p * k, (((x / k) / p) ** 2) * p, x / k)
+
+
+    rc["font.family"] = "Times New Roman"
+    rc["axes.labelsize"] = 36
+    rc["tick.labelsize"] = 32
+    rc["suptitle.size"] = 28
+    rc["title.size"] = 28
+
+    data = pd.read_excel(r"./experience_data.xlsx", sheet_name="data01")
+    model_names = data.Method
+    FLOPs = data.FLOPs
+    Params = data.Params
+    values = data.IoU
+    xtext_positions = [2250, 20, 2300, 1050, 225, 1010, 200, 600, 1810, 360, 975, 10]
+    ytext_positions = [68, 80.5, 54, 73, 70, 82, 83.5, 84, 74, 78, 86.5, 86]
+    legend_sizes = [1, 5, 25, 50, 100, 150]
+    legend_yposition = 57.5
+    legend_xpositions = [590, 820, 1030, 1260, 1480, 1710]
+    p = 15
+    k = 150
+
+    # 画图
+    fig, ax = plt.subplots(figsize=(18, 9), dpi=100, facecolor="w")
+    pubble = ax.scatter(x=FLOPs, y=values, s=circle_area_func(Params, p=p, k=k), c=list(range(len(model_names))), cmap=plt.cm.get_cmap("Spectral"), lw=3, ec="white", vmin=0, vmax=11)
+    center = ax.scatter(x=FLOPs[:-1], y=values[:-1], s=20, c="#e6e6e6")
+    ours_ = ax.scatter(x=FLOPs[-1:], y=values[-1:], s=60, marker="*", c="red")
+
+    # 添加文字
+    for i in range(len(FLOPs)):
+        ax.annotate(model_names[i], xy=(FLOPs[i], values[i]), xytext=(xtext_positions[i], ytext_positions[i]), fontsize=32, fontweight=(200 if i < (len(FLOPs)-1) else 600))
+    for i, legend_size in enumerate(legend_sizes):
+        ax.text(legend_xpositions[i], legend_yposition, str(legend_size) + "M", fontsize=32, fontweight=200)
+
+    # 添加图例
+    kw = dict(prop="sizes", num=legend_sizes, color="#e6e6e6", fmt="{x:.0f}", linewidth=None, markeredgewidth=3, markeredgecolor="white", func=lambda s: np.ceil(inverse_circle_area_func(s, p=p, k=k)))
+    legend = ax.legend(*pubble.legend_elements(**kw), bbox_to_anchor=(0.7, 0.15), title="Parameters (Params) / M", ncol=6, fontsize=0, title_fontsize=0, handletextpad=90, frameon=False)
+
+    ax.set(xlim=(0, 2900), ylim=(45, 90), xticks=np.arange(0, 2900, step=300), yticks=np.arange(45, 90, step=5), xlabel="Floating-point Operations Per Second (FLOPs) / GFLOPs", ylabel="Intersection over Union (IoU) / %")
+
+    fig.tight_layout()
+    fig.savefig("./3D_CBCT_Tooth_bubble_image.jpg", bbox_inches='tight', dpi=300)
+    plt.show()
+
 
 
 
@@ -514,4 +568,7 @@ if __name__ == '__main__':
     # generate_samples_image(scale=2)
 
     # 生成分割后拼接图
-    generate_segmented_sample_image(scale=1)
+    # generate_segmented_sample_image(scale=1)
+
+    # 生成气泡图
+    generate_bubble_image()
