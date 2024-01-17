@@ -188,7 +188,7 @@ def analyse_models(model_names_list):
     }
     # 遍历统计各个模型参数量
     for model_name in model_names_list:
-        if model_name != "MsRED":
+        if model_name != "PMFSNet":
             continue
         # 获取当前模型
         opt["model_name"] = model_name
@@ -451,7 +451,7 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
+    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
     # 分析ISIC2018数据集均值和标准差
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
@@ -469,6 +469,6 @@ if __name__ == '__main__':
     # find_most_similar_image(r"./images/ISIC2018_segment_result/target_3.jpg")
 
     # 生成分割后样本拼接图
-    generate_segmented_sample_image(scale=1)
+    # generate_segmented_sample_image(scale=1)
 
 
