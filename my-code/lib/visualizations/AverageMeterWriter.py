@@ -155,26 +155,26 @@ class AverageMeterWriter(object):
     def display_terminal(self):
         print_info = ""
         # 评价指标作为列名
-        print_info += " " * 12
+        print_info += " " * 14
         for metric_name in self.opt["metric_names"]:
-            print_info += "{:^12}".format(metric_name)
+            print_info += "{:^14}".format(metric_name)
         print_info += '\n'
         # 按每行依次添加各类别的所有评价指标
         for class_name in self.class_names:
-            print_info += "{:<12}".format(class_name)
+            print_info += "{:<14}".format(class_name)
             for metric_name in self.opt["metric_names"]:
                 value = 0
                 if self.statistics_dict["class_count"][class_name] != 0:
                     value = self.statistics_dict[metric_name][class_name] / self.statistics_dict["class_count"][class_name]
-                print_info += "{:^12.6f}".format(value)
+                print_info += "{:^14.8f}".format(value)
             print_info += '\n'
         # 添加最后一行为各评价指标在各类别上的均值
-        print_info += "{:<12}".format("average")
+        print_info += "{:<14}".format("average")
         for metric_name in self.opt["metric_names"]:
             value = 0
             if self.statistics_dict["count"] != 0:
                 value = self.statistics_dict[metric_name]["avg"] / self.statistics_dict["count"]
-            print_info += "{:^12.6f}".format(value)
+            print_info += "{:^14.8f}".format(value)
         print(print_info)
         result_txt_path = os.path.join(self.opt["run_dir"], utils.datestr() + "_" + self.opt["model_name"] + ".txt")
         utils.pre_write_txt(print_info, result_txt_path)
