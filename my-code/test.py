@@ -51,7 +51,7 @@ params = {
 
     "dataset_name": "NCTooth",  # 数据集名称， 可选["NCTooth", ]
 
-    "dataset_path": r"../../PMFS-Net/my-code/datasets/NC-release-data-checked",  # 数据集路径
+    "dataset_path": r"/data01/zjh/cbct-tooth-segmentation/binary-code/datasets/NC-release-data-checked",  # 数据集路径
 
     "batch_size": 1,  # batch_size大小
 
@@ -97,9 +97,7 @@ params = {
 }
 
 
-
-if __name__ == '__main__':
-
+def main():
     # 设置可用GPU
     os.environ["CUDA_VISIBLE_DEVICES"] = params["CUDA_VISIBLE_DEVICES"]
     # 随机种子、卷积算法优化
@@ -120,6 +118,8 @@ if __name__ == '__main__':
         transforms.Normalize(params["normalize_mean"], params["normalize_std"])
     ])
 
+    params["pretrain"] = os.path.join(r"./pretrain", params["model_name"] + ".pth")
+
     # 初始化模型
     model = models.get_model(params)
     print("完成初始化模型")
@@ -130,7 +130,6 @@ if __name__ == '__main__':
 
     print("---------------------------------------------初始化测试器-------------------------------------------------")
     tester = testers.Tester(params, model, metric)
-
 
     if params["test_type"] == 0:
         image_np = utils.load_image_or_label(params["single_image_path"], params["resample_spacing"], type="image")
@@ -150,6 +149,16 @@ if __name__ == '__main__':
         test_loader = dataloaders.get_test_dataloader(params)
         print("完成初始化数据加载器")
         tester.test_image_set(test_loader)
+
+
+
+if __name__ == '__main__':
+    model_names = ["PMFSNet", "UNet3D", "DenseVNet", "AttentionUNet3D", "DenseVoxelNet", "MultiResUNet3D", "UNETR", "SwinUNETR", "TransBTS", "nnFormer", "3DUXNet"]
+
+    for model_name in model_names:
+        params["model_name"] = model_name
+        main()
+
 
 
 
