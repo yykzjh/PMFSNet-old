@@ -131,7 +131,7 @@ def generate_segment_result_images(model_names):
     print("完成初始化配置")
 
     # 初始化一些路径
-    dataset_root_dir = r"datasets/NC-release-data-checked/valid"
+    dataset_root_dir = r"/data01/zjh/cbct-tooth-segmentation/binary-code/datasets/NC-release-data-checked/valid"
     images_dir = os.path.join(dataset_root_dir, "images")
     labels_dir = os.path.join(dataset_root_dir, "labels")
     cnt = 0
@@ -165,9 +165,8 @@ def generate_segment_result_images(model_names):
             tester = testers.Tester(params, model, None)
             segmented_image = tester.test_single_image_without_label(image.copy())
             segmented_images_list.append(segmented_image)
-        # 随机2D采样的其实slice
-        start_ind = random.randint(0, 1)
-        for slice_ind in range(start_ind, label.shape[2], 2):
+        # 遍历每张图像所有slice
+        for slice_ind in range(0, label.shape[2]):
             max_dsc_score = 0
             max_model_name = None
             segment_result_slices_list = []
@@ -178,14 +177,77 @@ def generate_segment_result_images(model_names):
                     max_dsc_score = dsc_score
                     max_model_name = model_names[j]
             if max_model_name == "PMFSNet":
-                image_slice = cv2.resize(image[:, :, slice_ind], (224, 224), interpolation=cv2.INTER_AREA)
-                cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_00.jpg"), image_slice)
+                # image_slice = cv2.resize(image[:, :, slice_ind], (224, 224), interpolation=cv2.INTER_AREA)
+                # image_slice = (image_slice - image_slice.min()) / (image_slice.max() - image_slice.min())
+                # image_slice *= 255
+                # image_slice = image_slice.astype(np.uint8)
+                # cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_00.jpg"), image_slice)
                 label_slice = cv2.resize(label[:, :, slice_ind], (224, 224), interpolation=cv2.INTER_NEAREST)
-                cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_01.jpg"), label_slice)
+                cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_00.jpg"), label_slice)
                 for j, segment_result_slice in enumerate(segment_result_slices_list):
                     segment_result_slice = cv2.resize(segment_result_slice, (224, 224), interpolation=cv2.INTER_NEAREST)
                     segment_result_slice = segment_result_slice[:, :, ::-1]
-                    cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_" + "{:02d}".format(j + 2) + ".jpg"), segment_result_slice)
+                    cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_" + "{:02d}".format(j + 1) + ".jpg"), segment_result_slice)
+                cnt += 1
+
+    # 初始化一些路径
+    dataset_root_dir = r"/data01/zjh/cbct-tooth-segmentation/binary-code/datasets/NC-release-data-checked/train"
+    images_dir = os.path.join(dataset_root_dir, "images")
+    labels_dir = os.path.join(dataset_root_dir, "labels")
+    cnt = 0
+    # 遍历所有图像
+    for image_name in tqdm(os.listdir(images_dir)):
+        image_path = os.path.join(images_dir, image_name)
+        label_path = os.path.join(labels_dir, image_name)
+        image = utils.load_image_or_label(image_path, params["resample_spacing"], type="image")
+        label = utils.load_image_or_label(label_path, params["resample_spacing"], type="label")
+        label[label == 1] = 255
+        # 暂存所有模型的分割结果
+        segmented_images_list = []
+        # 遍历所有模型
+        for model_name in model_names:
+            params["model_name"] = model_name
+            params["pretrain"] = os.path.join(r"./pretrain", model_name + ".pth")
+            # 初始化模型
+            model = models.get_model(params)
+            print("完成初始化模型:{}".format(params["model_name"]))
+            # 加载模型权重
+            pretrain_state_dict = torch.load(params["pretrain"], map_location=lambda storage, loc: storage.cuda(params["device"]))
+            model_state_dict = model.state_dict()
+            load_count = 0  # 成功加载参数计数
+            for param_name in model_state_dict.keys():
+                if (param_name in pretrain_state_dict) and (model_state_dict[param_name].size() == pretrain_state_dict[param_name].size()):
+                    model_state_dict[param_name].copy_(pretrain_state_dict[param_name])
+                    load_count += 1
+            model.load_state_dict(model_state_dict, strict=True)
+            print("{:.2f}%的模型参数成功加载预训练权重".format(100 * load_count / len(model_state_dict)))
+            # 分割
+            tester = testers.Tester(params, model, None)
+            segmented_image = tester.test_single_image_without_label(image.copy())
+            segmented_images_list.append(segmented_image)
+        # 遍历每张图像所有slice
+        for slice_ind in range(0, label.shape[2]):
+            max_dsc_score = 0
+            max_model_name = None
+            segment_result_slices_list = []
+            for j, segmented_image in enumerate(segmented_images_list):
+                segment_result_slice, dsc_score = get_analyse_image_and_dsc(segmented_image[:, :, slice_ind].copy(), label[:, :, slice_ind].copy())
+                segment_result_slices_list.append(segment_result_slice)
+                if dsc_score > max_dsc_score:
+                    max_dsc_score = dsc_score
+                    max_model_name = model_names[j]
+            if max_model_name == "PMFSNet":
+                # image_slice = cv2.resize(image[:, :, slice_ind], (224, 224), interpolation=cv2.INTER_AREA)
+                # image_slice = (image_slice - image_slice.min()) / (image_slice.max() - image_slice.min())
+                # image_slice *= 255
+                # image_slice = image_slice.astype(np.uint8)
+                # cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_00.jpg"), image_slice)
+                label_slice = cv2.resize(label[:, :, slice_ind], (224, 224), interpolation=cv2.INTER_NEAREST)
+                cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_00.jpg"), label_slice)
+                for j, segment_result_slice in enumerate(segment_result_slices_list):
+                    segment_result_slice = cv2.resize(segment_result_slice, (224, 224), interpolation=cv2.INTER_NEAREST)
+                    segment_result_slice = segment_result_slice[:, :, ::-1]
+                    cv2.imwrite(os.path.join(r"./images/NC-release-data_segment_result", "{:04d}".format(cnt) + "_" + "{:02d}".format(j + 1) + ".jpg"), segment_result_slice)
                 cnt += 1
 
 
