@@ -140,10 +140,7 @@ def analyse_MMOTU_mean_std(root_dir):
     print("stds:", stds)
 
 
-def cal_MMOTU_weights(root_dir):
-    src_dir = os.path.join(root_dir, "OTU_2d_processed")
-    src_labels_dir = os.path.join(src_dir, "train", "labels")
-
+def cal_MMOTU_weights(src_labels_dir=r"./datasets/MMOTU/OTU_2d_processed/train/labels"):
     # 初始化统计数组
     statistics_np = np.zeros((2,))
     # 遍历所有图像
@@ -151,6 +148,7 @@ def cal_MMOTU_weights(root_dir):
         label_path = os.path.join(src_labels_dir, label_name)
         # 读取当前图像的标注图像
         label_np = cv2.imread(label_path)
+        label_np[label_np > 0] = 1
         # 统计在当前标注图像中出现的类别索引以及各类别索引出现的次数
         class_indexes, indexes_cnt = np.unique(label_np, return_counts=True)
         # 遍历更新到统计数组中
@@ -649,14 +647,14 @@ if __name__ == '__main__':
     # 分析MMOTU数据集均值和标准差
     # analyse_MMOTU_mean_std(r"./datasets/MMOTU")
 
-    # 计算MMOTU数据集前景和背景加权权重
-    # cal_MMOTU_weights(r"./datasets/MMOTU")
+    # 计算数据集前景和背景加权权重
+    cal_MMOTU_weights(r"./datasets/Kvasir-SEG/Kvasir-SEG/train/annotations")
 
     # 依次计算一组模型的计算量和参数量
     # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
-    # 分析ISIC2018数据集均值和标准差
-    # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
+    # 分析数据集均值和标准差
+    analyse_ISIC2018_mean_std(r"./datasets/Kvasir-SEG/Kvasir-SEG")
 
     # 用ISIC2018的原始训练集来划分训练集、验证集和测试集
     # split_ISIC2018_dataset(r"./datasets")
@@ -674,14 +672,14 @@ if __name__ == '__main__':
     # generate_segmented_sample_image(scale=1)
 
     # 生成用于训练的DRIVE数据集
-    generate_DRIVE_training_dataset(root_dir=r"./datasets/DRIVE")
+    # generate_DRIVE_training_dataset(root_dir=r"./datasets/DRIVE")
 
     # 生成用于训练的STARE数据集
-    generate_STARE_training_dataset(root_dir=r"./datasets/STARE")
+    # generate_STARE_training_dataset(root_dir=r"./datasets/STARE")
 
     # 生成用于训练的CHASE-DB1数据集
-    generate_CHASE_DB1_training_dataset(root_dir=r"./datasets/CHASE-DB1")
+    # generate_CHASE_DB1_training_dataset(root_dir=r"./datasets/CHASE-DB1")
 
     # 生成用于训练的Kvasir-SEG数据集
-    generate_Kvasir_SEG_training_dataset(root_dir=r"./datasets/Kvasir-SEG")
+    # generate_Kvasir_SEG_training_dataset(root_dir=r"./datasets/Kvasir-SEG")
 
