@@ -432,8 +432,210 @@ def generate_segmented_sample_image(scale=1):
     image.save(r"./images/ISIC2018_segment_result_samples/ISIC2018_segmentation.jpg")
 
 
+def generate_DRIVE_training_dataset(root_dir=r"./datasets/DRIVE"):
+    # 初始化新目录结构
+    new_root_dir = os.path.join(root_dir, "DRIVE")
+    if os.path.exists(new_root_dir):
+        shutil.rmtree(new_root_dir)
+    os.makedirs(new_root_dir)
+    new_train_dir = os.path.join(new_root_dir, "train")
+    os.makedirs(new_train_dir)
+    new_test_dir = os.path.join(new_root_dir, "test")
+    os.makedirs(new_test_dir)
+    new_train_images_dir = os.path.join(new_train_dir, "images")
+    os.makedirs(new_train_images_dir)
+    new_train_annotations_dir = os.path.join(new_train_dir, "annotations")
+    os.makedirs(new_train_annotations_dir)
+    new_test_images_dir = os.path.join(new_test_dir, "images")
+    os.makedirs(new_test_images_dir)
+    new_test_annotations_dir = os.path.join(new_test_dir, "annotations")
+    os.makedirs(new_test_annotations_dir)
+    # 处理训练集
+    with open(os.path.join(root_dir, "train_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            # # 读取数据
+            # image = cv2.imread(image_path, -1)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # print(image.shape, label.shape)
+            # print(np.unique(label))
+            # break
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_train_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_train_annotations_dir, image_name), label)
+    # 处理测试集
+    with open(os.path.join(root_dir, "val_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_test_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_test_annotations_dir, image_name), label)
 
 
+def generate_STARE_training_dataset(root_dir=r"./datasets/STARE"):
+    # 初始化新目录结构
+    new_root_dir = os.path.join(root_dir, "STARE")
+    if os.path.exists(new_root_dir):
+        shutil.rmtree(new_root_dir)
+    os.makedirs(new_root_dir)
+    new_train_dir = os.path.join(new_root_dir, "train")
+    os.makedirs(new_train_dir)
+    new_test_dir = os.path.join(new_root_dir, "test")
+    os.makedirs(new_test_dir)
+    new_train_images_dir = os.path.join(new_train_dir, "images")
+    os.makedirs(new_train_images_dir)
+    new_train_annotations_dir = os.path.join(new_train_dir, "annotations")
+    os.makedirs(new_train_annotations_dir)
+    new_test_images_dir = os.path.join(new_test_dir, "images")
+    os.makedirs(new_test_images_dir)
+    new_test_annotations_dir = os.path.join(new_test_dir, "annotations")
+    os.makedirs(new_test_annotations_dir)
+    # 处理训练集
+    with open(os.path.join(root_dir, "train_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            # # 读取数据
+            # image = cv2.imread(image_path, -1)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # print(image.shape, label.shape)
+            # print(np.unique(label))
+            # break
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_train_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_train_annotations_dir, image_name), label)
+    # 处理测试集
+    with open(os.path.join(root_dir, "val_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_test_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_test_annotations_dir, image_name), label)
+
+
+def generate_CHASE_DB1_training_dataset(root_dir=r"./datasets/CHASE-DB1"):
+    # 初始化新目录结构
+    new_root_dir = os.path.join(root_dir, "CHASE-DB1")
+    if os.path.exists(new_root_dir):
+        shutil.rmtree(new_root_dir)
+    os.makedirs(new_root_dir)
+    new_train_dir = os.path.join(new_root_dir, "train")
+    os.makedirs(new_train_dir)
+    new_test_dir = os.path.join(new_root_dir, "test")
+    os.makedirs(new_test_dir)
+    new_train_images_dir = os.path.join(new_train_dir, "images")
+    os.makedirs(new_train_images_dir)
+    new_train_annotations_dir = os.path.join(new_train_dir, "annotations")
+    os.makedirs(new_train_annotations_dir)
+    new_test_images_dir = os.path.join(new_test_dir, "images")
+    os.makedirs(new_test_images_dir)
+    new_test_annotations_dir = os.path.join(new_test_dir, "annotations")
+    os.makedirs(new_test_annotations_dir)
+    # 处理训练集
+    with open(os.path.join(root_dir, "train_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            # # 读取数据
+            # image = cv2.imread(image_path, -1)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # print(image.shape, label.shape)
+            # print(np.unique(label))
+            # break
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_train_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_train_annotations_dir, image_name), label)
+    # 处理测试集
+    with open(os.path.join(root_dir, "val_list.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            image_path, annotation_path = line.strip().split()
+            image_path = os.path.join(root_dir, image_path)
+            annotation_path = os.path.join(root_dir, annotation_path)
+            image_name = os.path.basename(image_path)
+            label = cv2.imread(annotation_path, -1)
+            label = np.where(label == 1, 255, 0)
+            # 迁移保存数据
+            shutil.copyfile(image_path, os.path.join(new_test_images_dir, image_name.replace(".png", ".jpg")))
+            cv2.imwrite(os.path.join(new_test_annotations_dir, image_name), label)
+
+
+def generate_Kvasir_SEG_training_dataset(root_dir=r"./datasets/Kvasir-SEG"):
+    # 初始化新目录结构
+    new_root_dir = os.path.join(root_dir, "Kvasir-SEG")
+    if os.path.exists(new_root_dir):
+        shutil.rmtree(new_root_dir)
+    os.makedirs(new_root_dir)
+    new_train_dir = os.path.join(new_root_dir, "train")
+    os.makedirs(new_train_dir)
+    new_test_dir = os.path.join(new_root_dir, "test")
+    os.makedirs(new_test_dir)
+    new_train_images_dir = os.path.join(new_train_dir, "images")
+    os.makedirs(new_train_images_dir)
+    new_train_annotations_dir = os.path.join(new_train_dir, "annotations")
+    os.makedirs(new_train_annotations_dir)
+    new_test_images_dir = os.path.join(new_test_dir, "images")
+    os.makedirs(new_test_images_dir)
+    new_test_annotations_dir = os.path.join(new_test_dir, "annotations")
+    os.makedirs(new_test_annotations_dir)
+    # 获得旧结构目录
+    images_dir = os.path.join(root_dir, "images")
+    masks_dir = os.path.join(root_dir, "masks")
+    # 处理训练集
+    with open(os.path.join(root_dir, "train.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            file_name = line.strip()
+            image_path = os.path.join(images_dir, file_name + ".jpg")
+            mask_path = os.path.join(masks_dir, file_name + ".jpg")
+            # 读取数据
+            image = cv2.imread(image_path, -1)
+            label = cv2.imread(mask_path, -1)
+            label = cv2.cvtColor(label, cv2.COLOR_BGR2GRAY)
+            label = np.where(label > 127, 255, 0)
+            # 保存数据
+            cv2.imwrite(os.path.join(new_train_images_dir, file_name + ".jpg"), image)
+            cv2.imwrite(os.path.join(new_train_annotations_dir, file_name + ".png"), label)
+    # 处理测试集
+    with open(os.path.join(root_dir, "val.txt"), "r") as f:
+        for line in f.readlines():
+            # 获取路径
+            file_name = line.strip()
+            image_path = os.path.join(images_dir, file_name + ".jpg")
+            mask_path = os.path.join(masks_dir, file_name + ".jpg")
+            # 读取数据
+            image = cv2.imread(image_path, -1)
+            label = cv2.imread(mask_path, -1)
+            label = cv2.cvtColor(label, cv2.COLOR_BGR2GRAY)
+            label = np.where(label > 127, 255, 0)
+            # 保存数据
+            cv2.imwrite(os.path.join(new_test_images_dir, file_name + ".jpg"), image)
+            cv2.imwrite(os.path.join(new_test_annotations_dir, file_name + ".png"), label)
 
 
 
@@ -451,7 +653,7 @@ if __name__ == '__main__':
     # cal_MMOTU_weights(r"./datasets/MMOTU")
 
     # 依次计算一组模型的计算量和参数量
-    analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
+    # analyse_models(["PMFSNet", "MobileNetV2", "UNet", "MsRED", "CKDNet", "BCDUNet", "CANet", "CENet", "CPFNet", "AttU_Net"])
 
     # 分析ISIC2018数据集均值和标准差
     # analyse_ISIC2018_mean_std(r"./datasets/ISIC2018")
@@ -471,4 +673,15 @@ if __name__ == '__main__':
     # 生成分割后样本拼接图
     # generate_segmented_sample_image(scale=1)
 
+    # 生成用于训练的DRIVE数据集
+    generate_DRIVE_training_dataset(root_dir=r"./datasets/DRIVE")
+
+    # 生成用于训练的STARE数据集
+    generate_STARE_training_dataset(root_dir=r"./datasets/STARE")
+
+    # 生成用于训练的CHASE-DB1数据集
+    generate_CHASE_DB1_training_dataset(root_dir=r"./datasets/CHASE-DB1")
+
+    # 生成用于训练的Kvasir-SEG数据集
+    generate_Kvasir_SEG_training_dataset(root_dir=r"./datasets/Kvasir-SEG")
 
