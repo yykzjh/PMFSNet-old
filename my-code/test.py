@@ -51,7 +51,7 @@ params = {
 
     "dataset_name": "NCTooth",  # 数据集名称， 可选["NCTooth", ]
 
-    "dataset_path": r"/data01/zjh/cbct-tooth-segmentation/binary-code/datasets/NC-release-data-checked",  # 数据集路径
+    "dataset_path": r"./datasets/3D-CBCT-Tooth",  # 数据集路径
 
     "batch_size": 1,  # batch_size大小
 
