@@ -131,7 +131,7 @@ def generate_segment_result_images(model_names):
     print("完成初始化配置")
 
     # 初始化一些路径
-    dataset_root_dir = r"/data01/zjh/cbct-tooth-segmentation/binary-code/datasets/NC-release-data-checked/train"
+    dataset_root_dir = r"./datasets/3D-CBCT-Tooth/train"
     images_dir = os.path.join(dataset_root_dir, "images")
     labels_dir = os.path.join(dataset_root_dir, "labels")
     cnt = 0
